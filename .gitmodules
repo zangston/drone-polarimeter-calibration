@@ -1,3 +1,6 @@
 [submodule "camera/indi"]
 	path = camera/indi
 	url = https://github.com/indilib/indi.git
+[submodule "gps/BerryIMU"]
+	path = gps/BerryIMU
+	url = https://github.com/ozzmaker/BerryIMU.git
