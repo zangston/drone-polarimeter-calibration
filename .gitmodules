@@ -7,3 +7,6 @@
 [submodule "libcamera"]
 	path = libcamera
 	url = https://git.libcamera.org/libcamera/libcamera.git
+[submodule "motor/pigpio"]
+	path = motor/pigpio
+	url = https://github.com/joan2937/pigpio.git
