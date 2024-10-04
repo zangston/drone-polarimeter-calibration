@@ -1,0 +1,3 @@
+[submodule "camera/indi"]
+	path = camera/indi
+	url = https://github.com/indilib/indi.git
