@@ -1,0 +1,100 @@
+Linux QSB Demo
+
+
+DESCRIPTION
+-----------
+
+The file qsb-helloworld.c is provided as a demonstration of how to 
+communicate with the QSB in a Linux environment. It was tested using 
+Ubuntu 22.04.3 LTS (jammy) but should work similarly in other Debian-
+based distributions. 
+
+The program prompts the user to select a timestamp source, 0 for QSB or 
+1 for system.  If the QSB provides the timestamp, then the QSB is configured
+to include a 8 byte timestamp with all QSB replies. The QSB timestamp updates 
+every 1.95 milliseconds and is reset at startup or anytime a 1 is written to 
+the timestamp register. When the timestamp source is system, the QSB does not 
+send the additional 8 bytes of timestamp data and a higher ressolution system 
+timer is used.
+
+Once the timestamp source is selected, the program prompts the user for the 
+encoder counter threshold value. The QSB is configured to stream the encoder 
+count when the encoder counter value changes by threshold amount.
+
+The QSB is configured to read an encoder in quadrature mode,
+X4 counter mode, index disabled, modulo-N, counter enabled, and the 
+counter preset register set to 1999.  This will allow the counter to 
+count up to 2000 pulses before restarting at 0. The streaming interval is 
+set to 0, enabling the QSB to stream as fast a possible. The program can be 
+modified to stream at of interval rates divisible by 1.95 milliseconds.
+
+The progam displays the streamed count value and a timestamp to the terminal
+until the user presses q or Ctrl-C.  The timestamp will be either the elapsed
+time since the QSB timestamp was reset or since the application was started.
+
+FINDING THE QSB
+---------------
+
+The program depends on a hot/cold-plugging mechanism like udev to map the 
+QSB to a USB-to-serial device. The code assumes that no other USB tty 
+device is present and tries to open /dev/ttyUSB0. This may be a problem in 
+systems where other USB devices are present that also act as UARTs. Linux 
+is not deterministic in assigning node files to the scanned devices upon 
+boot; there is also a possibility that the QSB is plugged later on, when 
+an unknown number of devices may have been connected to the computer.
+
+One way to deal with this issue is by creating a symbolic link in the /dev 
+directory with a  predetermined node name that the code can safely use. 
+For example, /dev/qsb could be a predetermined link that refers to the 
+actual device assigned by the Kernel. The specific ways to do this vary 
+by distribution and by hot-plugging mechanism and are out of the scope 
+of this demo.
+
+An example rules configuration file has been included called 99-usb-serial.rules.
+This file should be placed in the /etc/udev/rules.d directory.
+It is used to map a usb device that have been added to the system with a 
+specific idVendor of 0403 and idProduct of 6001 to a sysmbol link call QSB-DEVICE.
+The demo program assigns the SERIAL_PORT to the QSB-DEVICE symbolic link.
+
+When a QSB device is plugged in, you should see ttyUSB0 and the symbolic link 
+QSB-DEVICE show up in the /dev directory.  
+Type cd /dev to switch to the /dev directory and ls to list the content of the directory.
+
+For information on using udev to create the link automatically at boot or 
+at plug-in time, check the following resources:
+
+  - en.wikipedia.org/wiki/udev
+  - reactivated.net/writing_udev_rules.html
+  - ubuntuforums.org/showthread.php?t=168221
+
+The following values for the QSB may be useful when configuring the 
+hot-plugging mechanism:
+
+  - Vendor ID: 0403
+  - Product ID: 6001
+  
+PERMISSIONS
+-----------
+You may run into permission issues accessing the device.  Rather than granting execute
+permissions to ttyUSB0 or QSB-DEVICE, which comes and goes as the device is plugged
+or unplugged, add yourself to the permission group the ttyUSB0 device belongs to.
+
+To see the groups you are in, type: groups
+
+To see all available groups, type: compgen -g
+We are looing for the groups, tty and dialout. 
+
+To add yourself to the tty group, type: sudo usermod -a -G tty username
+To add yourself to the dialout group, type: sudo usermod -a -G dialout username
+
+RUNNING THE DEMO
+----------------
+
+The code is self contained and does not need anything beyond stdlibc, so 
+the compilation should be straightforward:
+
+	gcc -o qsb-helloworld qsb-helloworld.c
+
+Make sure to plug in the QSB before running the demo to avoid errors due to
+a missing dev node. Depending on your particular setup, some modifications 
+to the code may be necessary.
