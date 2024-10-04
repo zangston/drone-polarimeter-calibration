@@ -1,0 +1,12 @@
+import RPi.GPIO as GPIO
+
+channel = 16
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(channel, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+def my_callback(channel):
+    pass
+
+GPIO.add_event_detect(channel, edge=GPIO.RISING, callback=my_callback)
+GPIO.cleanup()

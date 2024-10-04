@@ -1,0 +1,82 @@
+import pigpio
+import matplotlib.pyplot as plt
+import subprocess
+from datetime import datetime
+import pickle
+import Encoder
+
+# setup
+pi = pigpio.pi()
+# gpio pins
+A_plus = 23
+Z_plus = 24
+B_plus = 27
+# defining lists
+counter_list = []
+AB_list = []        #A and B together so each input is either 00, 01 , 10, or 11
+AB_val_list = []
+#define constants
+step_size = 1.8/8    # 1.8/8
+
+
+def encoder_data(A_plus, B_plus):
+    pulse = 0
+    AB_list.append(str(pi.read(A_plus))+str(pi.read(B_plus)))
+    if len(AB_list) > 1:
+        if AB_list[-1] != AB_list[-2]:
+            #print(AB_list[-1], AB_list[-2])
+            pulse = 1
+    return pulse
+
+
+list1 = []
+list2 = []
+list3 = []
+list4 = []
+#make sure not skipping steps cuz I think it is rn. Look at AB list output   QUADRATURE LIBRARY!!!!!!
+try:
+    """
+    subprocess.Popen("~/RPI/motor/scripts/step 500", stdout=subprocess.PIPE, shell=True)
+    go_to_zero()
+    time.sleep(5)
+    """
+    encoder = Encoder.Encoder(23,27)
+    position = encoder.read()
+    last_position = None
+    max_step = 1600
+    i = 0
+    counter = 0
+    spacetime = {}
+    subprocess.Popen("~/RPI/motor/scripts/step 500", stdout=subprocess.PIPE, shell=True)
+    while i < max_step*3: #6 = one full rev of big wheel (10 = about 50 pics at 0.01 expo time)
+        if last_position is None or position != last_position:
+            now2 = datetime.now()
+            seconds2 = now2.timestamp()
+            list3.append(seconds2)
+            list4.append(position)
+        last_position = position
+
+        if encoder_data(A_plus, B_plus) == 1:
+            i += 1
+            now = datetime.now()
+            seconds = now.timestamp()
+            loc = counter*step_size
+            counter += 1
+            if counter >= max_step:
+                counter = 0
+            spacetime[seconds] = loc
+
+    for key, val in spacetime.items():
+        list1.append(key)   #time
+        list2.append(val)   #loc
+
+#    plt.scatter(list1, list2)
+#    plt.
+
+    print(list4)
+    pi.stop()
+    
+except KeyboardInterrupt:
+    pass
+
+pi.stop() 

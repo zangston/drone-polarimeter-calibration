@@ -1,0 +1,11 @@
+Encoder-1.1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+Encoder-1.1.dist-info/LICENSE,sha256=fK-AXlsY0-PSvJDSVpPBVdk0z2bE0beoXdv6y1ucRbA,39
+Encoder-1.1.dist-info/METADATA,sha256=srF-5Xf_XrnyvwYBHFqX4Lb-xw2_A9WA-TYbUP7dCPI,1900
+Encoder-1.1.dist-info/RECORD,,
+Encoder-1.1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+Encoder-1.1.dist-info/WHEEL,sha256=g4nMs7d-Xl9-xC9XovUrsDHGXt-FT0E17Yqo92DEfvY,92
+Encoder-1.1.dist-info/top_level.txt,sha256=hOmctd-ZMX2uT2pDW-6C5krnIaObPpV5p_cYYc7Y-0M,8
+Encoder/__init__.py,sha256=Yy2eHe62RaXcF5lZv4L3rOI5CrkedsLVghl-J9awkFk,37
+Encoder/__pycache__/__init__.cpython-311.pyc,,
+Encoder/__pycache__/encoder.cpython-311.pyc,,
+Encoder/encoder.py,sha256=ftX1XVPBAf2bBD32k2Ic2pbMcomP7L9lNT9qt1dAbnM,1795
