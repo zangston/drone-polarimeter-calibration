@@ -4,3 +4,6 @@
 [submodule "gps/BerryIMU"]
 	path = gps/BerryIMU
 	url = https://github.com/ozzmaker/BerryIMU.git
+[submodule "libcamera"]
+	path = libcamera
+	url = https://git.libcamera.org/libcamera/libcamera.git
