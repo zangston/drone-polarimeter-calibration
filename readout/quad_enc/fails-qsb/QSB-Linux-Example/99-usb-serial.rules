@@ -1,0 +1,2 @@
+# Map QSB device to file descriptors and name device QSB-DEVICE to allow easy access to read and write to the device. 
+ACTION=="add",ATTRS{idProduct}=="6001",ATTRS{idVendor}=="0403",DRIVERS=="usb",SYMLINK+="QSB-DEVICE"
