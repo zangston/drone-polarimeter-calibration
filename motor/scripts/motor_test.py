@@ -4,9 +4,9 @@ import os
 # Function to run the motor control script with the desired action and speed
 def run_motor_control(action, speed=None):
     if speed:
-        command = f"python motor_control.py {action} {speed}"
+        command = f"python3 motor_control.py {action} {speed}"
     else:
-        command = f"python motor_control.py {action}"
+        command = f"python3 motor_control.py {action}"
     
     os.system(command)
 
