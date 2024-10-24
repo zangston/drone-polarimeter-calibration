@@ -1,9 +1,18 @@
 import os
 import sys
 
-# Function to execute pigpio commands
+# Function to run shell commands
 def run_command(command):
     os.system(command)
+
+# Check if pigpiod is running, if not, start it
+def check_pigpiod():
+    status = os.system("pgrep pigpiod > /dev/null")
+    if status != 0:
+        print("pigpiod not running. Starting pigpiod with sudo...")
+        os.system("sudo pigpiod")
+    else:
+        print("pigpiod is running.")
 
 # Enable motor
 def enable():
@@ -36,6 +45,9 @@ def stop():
 
 # Main function to control motor based on user input
 def main():
+    # Check if pigpiod is running, and start it if necessary
+    check_pigpiod()
+
     if len(sys.argv) < 2:
         print("Usage: python motor_control.py {enable|disable|forward|backward|stop} [speed]")
         sys.exit(1)
