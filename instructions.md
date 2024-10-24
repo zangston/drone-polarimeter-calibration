@@ -9,7 +9,7 @@ Motor files are found in 'RPI/motor/scripts'
 3. Make sure the encoder (big black USB stick with colored wires)  is plugged into the blue USB 3.0 port of the RPI
 4. From home directory, run $ cd RPI/motor/scripts
 5. Enable pigpiod: $ sudo pigpiod; enter password
-6. $ ./enable; ./forward; ./step [speed]
+6. $ ./enable; $ ./forward; $ ./step [speed]
 
 ## Camera instructions
 
