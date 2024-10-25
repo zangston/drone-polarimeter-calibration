@@ -8,8 +8,12 @@ Motor files are found in 'RPI/motor/scripts'
 2. Flip the hat switch to ON 
 3. Make sure the encoder (big black USB stick with colored wires)  is plugged into the blue USB 3.0 port of the RPI
 4. From home directory, run $ cd RPI/motor/scripts
-5. Enable pigpiod: $ sudo pigpiod; enter password
-6. $ ./enable; $ ./forward; $ ./step [speed]
+5. Enable motor: $ python3 motor_control.py enable
+6. Spin motor: $ python3 motor_control.py [forward/backward] [speed]
+
+Troubleshooting steps for stepper motor:
+1. Run test script ($ python3 motor_test.py)
+2. Check if pigpiod is enabled (should automatically be enabled by motor_control.py)
 
 ## Camera instructions
 
