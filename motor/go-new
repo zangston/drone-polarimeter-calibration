@@ -1,0 +1,29 @@
+import subprocess
+import keyboard
+
+password = "REDACTED"
+file_path = "/home/declan/RPI/"
+spin_rate = "250"
+command = f'echo {password} | sudo -S pigpiod'
+
+def stop():
+    try:
+        subprocess.run([file_path + "motor/scripts/disable"])
+    except subprocess.CalledProcessError as e:
+        print(f"Error: {e}")
+
+keyboard.add_hotkey('q', stop)
+
+try:
+    # Motor
+    subprocess.run(command, shell=True, check=True)
+    subprocess.run([file_path + "motor/scripts/enable"])
+    subprocess.run([file_path + "motor/scripts/backward"])
+    subprocess.run([file_path + "motor/scripts/step"] + [spin_rate], check=True)
+    # Encoder
+    subprocess.run([file_path + "readout/quad_enc/declan-python-pickle"])           # change so it asks for arguments
+    keyboard.wait()
+except (subprocess.CalledProcessError, KeyboardInterrupt) as e:
+    print(f"Error: {e}")
+finally:
+    keyboard.remove_hotkey('q')
