@@ -101,7 +101,8 @@ int main() {
     }
 
     // Set exposure time
-    long exposure_time = 20 * 1000000;   // 20 seconds
+    int seconds = 20;
+    long exposure_time = seconds * 1000000; // Number of seconds * ms per second
     cout << "Set exposure time: " << exposure_time / 1000000 << " seconds" << endl;
     if (ASISetControlValue(camera_info.CameraID, ASI_EXPOSURE, exposure_time, ASI_FALSE) != ASI_SUCCESS) {
         cerr << "Error setting exposure time" << endl;
