@@ -10,6 +10,8 @@
  ******************************************************************/
 
 # include <iostream>
+# include <fstream>
+# include <iomanip>
 
 # include <memory>
 # include <vector>
@@ -139,6 +141,23 @@ int main() {
         cout << static_cast<int>(asi_image[i]) << " ";
     }
     cout << endl;
+
+    // Save full data to a .txt file
+    ofstream myfile ("data-output.txt");
+    if (myfile.is_open())
+    {
+        for(unsigned long i = 0; i < sizeof(asi_image); i++)
+        {
+            myfile << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(asi_image[i]) << " ";   // Convert bytes to hex
+            if ((i + 1) % 16 == 0) myfile << "\n";  // New line every 16 bytes
+        }
+        myfile.close();
+        cout << "Data saved to data-output.txt in hexadecimal format" << endl;
+    }
+    else 
+    {
+        cerr << "Unable to open file";
+    }
 
     // Close camera
     cout << "Closing camera" << endl;
