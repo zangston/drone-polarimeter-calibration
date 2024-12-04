@@ -8,8 +8,8 @@ binaries=zwo-setup.out
 
 all: clean $(binaries)
 
-zwo-setup: zwo-setup.cpp
-	$(CC) $? -o zwo-setup.out $(CFLAGS) $(LIBS) $(LDIR)
+zwo-setup.out: zwo-setup.cpp
+	$(CC) $< -o $@ $(CFLAGS) $(LIBS) $(LDIR)
 
 run:
 	./zwo-setup.out
