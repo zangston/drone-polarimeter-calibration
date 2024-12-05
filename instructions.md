@@ -1,9 +1,13 @@
 # How to use the polarimeter RPI
 work in progress...
 
+## Connecting to the Raspberry Pi
+1. Either use on-grounds wifi, or VPN into the UVA network
+2. Connect via terminal using command $ ssh declan@172.27.183.186, enter password
+
 ## Motor instructions
 Motor files are found in 'RPI/motor/scripts'
- 
+
 1. Identify the encoder hat (should be the top of the stack with colored wires coming out of the green pin housing)
 2. Flip the hat switch to ON 
 3. Make sure the encoder (big black USB stick with colored wires)  is plugged into the blue USB 3.0 port of the RPI
@@ -22,5 +26,5 @@ Troubleshooting steps for stepper motor:
 	2. Ctrl + K in Kstars to open Ekos
 	3. Select profile associated with camera (named ZWO...)
 	4. Press play button to start Ekos to show camera controls
-2. Click on camera icon in Ekos top bar to navigate to capture seccionts
-3. Click play button on right side fo start capture
+2. Click on camera icon in Ekos top bar to navigate to capture settings
+3. Click play button on right side to start capture

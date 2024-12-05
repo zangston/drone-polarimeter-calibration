@@ -10,3 +10,6 @@
 [submodule "motor/pigpio"]
 	path = motor/pigpio
 	url = https://github.com/joan2937/pigpio.git
+[submodule "zwo-asi-sdk"]
+	path = zwo-asi-sdk
+	url = git@github.com:zangston/zwo-asi-sdk.git
