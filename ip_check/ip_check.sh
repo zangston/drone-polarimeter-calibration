@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Load environment variables
+# Load SMTP parameters
 SMTP_SERVER="smtp.gmail.com"
 SMTP_PORT=465
-EMAIL_ADDRESS="SENDERADDRESS@GMAIL.COM"
-SMTP_PASSWORD="XXXX XXXX XXXX XXXX"
-RECIPIENT="RECIEVERADDRESS@GMAIL.COM"
+EMAIL_ADDRESS="SENDER@gmail"    # Gmail address to send from (must be gmail)
+SMTP_PASSWORD="xxxx xxxx xxxx xxxx" # Google app password to bypass 2FA
+RECIPIENT="RECIPIENT@example.mail"    # Email address to send to
 
 # Set file to store the previous IP address
 IP_FILE="ip_address.txt"  # Path to save the last known IP
