@@ -1,7 +1,11 @@
 #!/bin/bash
 
 # Load environment variables
-source .env 
+SMTP_SERVER="smtp.gmail.com"
+SMTP_PORT=465
+EMAIL_ADDRESS="SENDERADDRESS@GMAIL.COM"
+SMTP_PASSWORD="XXXX XXXX XXXX XXXX"
+RECIPIENT="RECIEVERADDRESS@GMAIL.COM"
 
 # Set file to store the previous IP address
 IP_FILE="ip_address.txt"  # Path to save the last known IP
@@ -28,7 +32,7 @@ if [ "$CURRENT_IP" != "$LAST_IP" ]; then
     BODY="The private IP address of the device has changed. New IP: $CURRENT_IP"
 
     # Send the email using curl
-    echo -e "Subject: $SUBJECT\n\n$BODY" | curl --ssl-reqd \
+    echo "Subject: $SUBJECT\n\n$BODY" | curl --ssl-reqd \
         --url "smtps://smtp.gmail.com:465" \
         --mail-from "$EMAIL_ADDRESS" \
         --mail-rcpt "$RECIPIENT" \
