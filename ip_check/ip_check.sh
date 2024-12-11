@@ -6,7 +6,7 @@ source .env
 # Set file to store the previous IP address
 IP_FILE="ip_address.txt"  # Path to save the last known IP
 
-# Get the current private IP address (eth0 or wlan0 depending on your setup)
+# Get the current private IP address
 CURRENT_IP=$(hostname -I | awk '{print $1}')
 
 # Check if IP file exists, and if not, create it
@@ -24,7 +24,7 @@ if [ "$CURRENT_IP" != "$LAST_IP" ]; then
     echo "$CURRENT_IP" > "$IP_FILE"
 
     # Compose the email
-    SUBJECT="IP Address Change Notification"
+    SUBJECT="astro-johnson Raspberry PI IP Address Change Notification"
     BODY="The private IP address of the device has changed. New IP: $CURRENT_IP"
 
     # Send the email using curl
