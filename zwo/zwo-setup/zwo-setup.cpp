@@ -22,6 +22,8 @@
 
 using namespace std;
 
+string format_exposure_time(double time);
+
 int main(int argc, char *argv[]) {
     cout << "ZWO ASICamera test" << endl;
     
@@ -108,7 +110,7 @@ int main(int argc, char *argv[]) {
         exposure_seconds = stod(argv[1]);
     }
     long exposure_time = exposure_seconds * 1000000; // Number of seconds * ms per second
-    cout << "Set exposure time: " << exposure_time / 1000000 << " seconds" << endl;
+    cout << "Set exposure time: " << exposure_time / 1000000.0 << " seconds" << endl;
     if (ASISetControlValue(camera_info.CameraID, ASI_EXPOSURE, exposure_time, ASI_FALSE) != ASI_SUCCESS) {
         cerr << "Error setting exposure time" << endl;
         return 1;
@@ -193,7 +195,7 @@ int main(int argc, char *argv[]) {
         myfile << endl;
 
         // Write exposure time to file
-        myfile << "Exposure time: " << exposure_time / 1000000 << " seconds" << endl;
+        myfile << "Exposure time: " << exposure_time / 1000000.0 << " seconds" << endl;
 
         // Write image data to file
         myfile << "First 20 bytes (hexadecimal):" << endl;
