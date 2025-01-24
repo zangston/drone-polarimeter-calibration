@@ -11,7 +11,9 @@
 
 # include <iostream>
 # include <fstream>
+# include <sstream>
 # include <iomanip>
+# include <ctime>
 
 # include <memory>
 # include <vector>
@@ -20,7 +22,7 @@
 
 using namespace std;
 
-int main() {
+int main(int argc, char *argv[]) {
     cout << "ZWO ASICamera test" << endl;
     
     long image_size = 0;
@@ -101,8 +103,11 @@ int main() {
     }
 
     // Set exposure time
-    int seconds = 20;
-    long exposure_time = seconds * 1000000; // Number of seconds * ms per second
+    int exposure_seconds = 20; // Default value
+    if (argc > 1) {
+        exposure_seconds = stoi(argv[1]);
+    }
+    long exposure_time = exposure_seconds * 1000000; // Number of seconds * ms per second
     cout << "Set exposure time: " << exposure_time / 1000000 << " seconds" << endl;
     if (ASISetControlValue(camera_info.CameraID, ASI_EXPOSURE, exposure_time, ASI_FALSE) != ASI_SUCCESS) {
         cerr << "Error setting exposure time" << endl;
@@ -135,6 +140,19 @@ int main() {
         return 1;
     }
 
+    // Generate a filename with the current date and time
+    time_t now = time(0);
+    tm *ltm = localtime(&now);
+    stringstream filename;
+    filename << "image_data_" 
+             << 1900 + ltm->tm_year << "_" 
+             << setfill('0') << setw(2) << 1 + ltm->tm_mon << "_"
+             << setfill('0') << setw(2) << ltm->tm_mday << "_"
+             << setfill('0') << setw(2) << ltm->tm_hour 
+             << setfill('0') << setw(2) << ltm->tm_min 
+             << setfill('0') << setw(2) << ltm->tm_sec 
+             << ".txt";
+
     // Print the first few bytes of exposure data
     cout << "Image data (first 20 bytes): " << endl;
     for (int i = 0; i < 20; i++)
@@ -144,19 +162,32 @@ int main() {
     cout << endl;
 
     // Save full data to a .txt file
-    ofstream myfile ("data-output.txt");
-    if (myfile.is_open())
-    {
-        for(unsigned long i = 0; i < sizeof(asi_image); i++)
-        {
-            myfile << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(asi_image[i]) << " ";   // Convert bytes to hex
+    ofstream myfile(filename.str());
+    if (myfile.is_open()) {
+        
+        // Write camera properties to the file
+        myfile << "Camera properties:\n";
+        myfile << "Name: " << camera_info.Name << "\n";
+        myfile << "Camera ID: " << camera_info.CameraID << "\n";
+        myfile << "Width & Height: " << camera_info.MaxWidth << " x " << camera_info.MaxHeight << "\n";
+        myfile << "Color: " << (camera_info.IsColorCam == ASI_TRUE ? "Yes" : "No") << "\n";
+        myfile << "  Bayer pattern: " << camera_info.BayerPattern << "\n";
+        myfile << "  Pixel size: " << camera_info.PixelSize << " microns\n";
+        myfile << "  e-/ADU: " << camera_info.ElecPerADU << "\n";
+        myfile << "  Bit depth: " << camera_info.BitDepth << "\n";
+        myfile << "  Trigger cam: " << (camera_info.IsTriggerCam ? "Yes" : "No") << "\n\n";
+
+        // Write exposure time to file
+        myfile << "Exposure time: " << exposure_time / 1000000 << " seconds" << endl;
+
+        // Write image data to file
+        for (unsigned long i = 0; i < asi_image.size(); ++i) {
+            myfile << "0x" << hex << setw(2) << setfill('0') << static_cast<int>(asi_image[i]) << " ";
             if ((i + 1) % 16 == 0) myfile << "\n";  // New line every 16 bytes
         }
         myfile.close();
-        cout << "Data saved to data-output.txt in hexadecimal format" << endl;
-    }
-    else 
-    {
+        cout << "Data saved to " << filename.str() << " in hexadecimal format" << endl;
+    } else {
         cerr << "Unable to open file";
     }
 
