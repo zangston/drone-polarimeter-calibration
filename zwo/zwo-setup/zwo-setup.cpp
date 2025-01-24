@@ -103,9 +103,9 @@ int main(int argc, char *argv[]) {
     }
 
     // Set exposure time
-    int exposure_seconds = 20; // Default value
+    double exposure_seconds = 20; // Default value
     if (argc > 1) {
-        exposure_seconds = stoi(argv[1]);
+        exposure_seconds = stod(argv[1]);
     }
     long exposure_time = exposure_seconds * 1000000; // Number of seconds * ms per second
     cout << "Set exposure time: " << exposure_time / 1000000 << " seconds" << endl;
