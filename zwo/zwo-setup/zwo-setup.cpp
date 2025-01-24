@@ -144,13 +144,14 @@ int main(int argc, char *argv[]) {
     time_t now = time(0);
     tm *ltm = localtime(&now);
     stringstream filename;
-    filename << "image_data_" 
+    filename << "image_data-" 
              << 1900 + ltm->tm_year << "_" 
              << setfill('0') << setw(2) << 1 + ltm->tm_mon << "_"
              << setfill('0') << setw(2) << ltm->tm_mday << "_"
              << setfill('0') << setw(2) << ltm->tm_hour 
              << setfill('0') << setw(2) << ltm->tm_min 
              << setfill('0') << setw(2) << ltm->tm_sec 
+             << "-" << exposure_seconds << "s"
              << ".txt";
 
     // Print the first few bytes of exposure data
@@ -161,7 +162,7 @@ int main(int argc, char *argv[]) {
     }
     cout << endl;
 
-    // Save full data to a .txt file
+    // Save data to a .txt file
     ofstream myfile(filename.str());
     if (myfile.is_open()) {
         
@@ -177,13 +178,28 @@ int main(int argc, char *argv[]) {
         myfile << "  Bit depth: " << camera_info.BitDepth << "\n";
         myfile << "  Trigger cam: " << (camera_info.IsTriggerCam ? "Yes" : "No") << "\n\n";
 
+        // Write camera controls to file
+        myfile << "Camera controls:" << endl;
+        for (int i = 0; i < asi_num_controls; ++i) {
+            ASI_CONTROL_CAPS control_caps;
+            if (ASIGetControlCaps(camera_info.CameraID, i, &control_caps) == ASI_SUCCESS) {
+                myfile << "  Property " << control_caps.Name << ": [" 
+                    << control_caps.MinValue << ", " << control_caps.MaxValue 
+                    << "] = " << control_caps.DefaultValue
+                    << (control_caps.IsWritable ? " (set)" : "") 
+                    << " - " << control_caps.Description << endl;
+            }    
+        }
+        myfile << endl;
+
         // Write exposure time to file
         myfile << "Exposure time: " << exposure_time / 1000000 << " seconds" << endl;
 
         // Write image data to file
-        for (unsigned long i = 0; i < asi_image.size(); ++i) {
+        myfile << "First 20 bytes (hexadecimal):" << endl;
+        for (unsigned long i = 0; i < 20; ++i) {
             myfile << "0x" << hex << setw(2) << setfill('0') << static_cast<int>(asi_image[i]) << " ";
-            if ((i + 1) % 16 == 0) myfile << "\n";  // New line every 16 bytes
+            // if ((i + 1) % 16 == 0) myfile << "\n";  // New line every 16 bytes
         }
         myfile.close();
         cout << "Data saved to " << filename.str() << " in hexadecimal format" << endl;
