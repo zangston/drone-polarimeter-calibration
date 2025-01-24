@@ -199,9 +199,9 @@ int main(int argc, char *argv[]) {
 
         // Write image data to file
         myfile << "First 20 bytes (hexadecimal):" << endl;
+        // for (unsigned long = 0; i < asi_image.size(); ++i) {     // Uncomment to output full byte data 
         for (unsigned long i = 0; i < 20; ++i) {
             myfile << "0x" << hex << setw(2) << setfill('0') << static_cast<int>(asi_image[i]) << " ";
-            // if ((i + 1) % 16 == 0) myfile << "\n";  // New line every 16 bytes
         }
         myfile.close();
         cout << "Data saved to " << filename.str() << " in hexadecimal format" << endl;
