@@ -18,7 +18,7 @@
 # include <memory>
 # include <vector>
 
-# include "../dependencies/zwo-asi-sdk/1.36/linux_sdk/include/ASICamera2.h"
+# include "/home/declan/RPI/zwo/dependencies/zwo-asi-sdk/1.36/linux_sdk/include/ASICamera2.h"
 
 using namespace std;
 
