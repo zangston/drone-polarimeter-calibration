@@ -10,7 +10,7 @@ OBJS := $(SRCS:.cpp=.o)
 
 .PHONY: all clean
 
-all: $(TARGET)
+all: clean $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CXX) $(OBJS) -o $@ $(LDFLAGS)
@@ -19,4 +19,7 @@ $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(TARGET) *.fit
+
+clean-fits:
+	rm -f *.fit
