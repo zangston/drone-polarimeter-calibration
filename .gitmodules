@@ -16,6 +16,3 @@
 [submodule "zwo/dependencies/Elefits"]
 	path = zwo/dependencies/Elefits
 	url = https://github.com/CNES/EleFits.git
-[submodule "zwo/dependencies/EleFits"]
-	path = zwo/dependencies/EleFits
-	url = https://github.com/CNES/EleFits.git
