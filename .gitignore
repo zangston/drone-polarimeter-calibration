@@ -5,3 +5,5 @@
 readout/storage/
 
 *.out
+*.o
+*.a
