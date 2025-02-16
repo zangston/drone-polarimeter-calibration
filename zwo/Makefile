@@ -1,16 +1,14 @@
 CXX := g++
-CXXFLAGS := -I/home/declan/RPI/zwo/dependencies/CCfits-2.6/include \
-            -I/home/declan/RPI/zwo/dependencies/zwo-asi-sdk/1.36/linux_sdk/include \
+CXXFLAGS := -I/home/declan/RPI/zwo/dependencies/zwo-asi-sdk/1.36/linux_sdk/include \
             -Wall -Wextra -std=c++14
-LDFLAGS := -L/home/declan/RPI/zwo/dependencies/CCfits-2.6/lib \
-           -L/home/declan/RPI/zwo/dependencies/zwo-asi-sdk/1.36/linux_sdk/lib \
-           -lCCfits -lcfitsio -lASICamera2
+LDFLAGS := -L/home/declan/RPI/zwo/dependencies/zwo-asi-sdk/1.36/linux_sdk/lib \
+           -lASICamera2
 
 TARGET := capture-exposure
 SRCS := capture-exposure.cpp
 OBJS := $(SRCS:.cpp=.o)
 
-.PHONY: all clean clean-fits
+.PHONY: all clean clean-bin
 
 all: $(TARGET)
 
@@ -21,7 +19,7 @@ $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(TARGET) *.fits
+	rm -f $(OBJS) $(TARGET) *.bin
 
-clean-fits:
-	rm -f *.fits
+clean-bin:
+	rm -f *.bin
