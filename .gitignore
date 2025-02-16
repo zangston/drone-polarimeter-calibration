@@ -7,3 +7,5 @@ readout/storage/
 *.out
 *.o
 *.a
+
+.ipynb_checkpoints/
