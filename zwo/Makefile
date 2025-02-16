@@ -8,7 +8,7 @@ TARGET := capture-exposure
 SRCS := capture-exposure.cpp
 OBJS := $(SRCS:.cpp=.o)
 
-.PHONY: all clean clean-bin
+.PHONY: all clean clean-img
 
 all: $(TARGET)
 
@@ -19,7 +19,7 @@ $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(TARGET) *.bin
+	rm -f $(OBJS) $(TARGET) *.bin *.fits *.png
 
-clean-bin:
-	rm -f *.bin
+clean-img:
+	rm -f *.bin *.fits *.png
