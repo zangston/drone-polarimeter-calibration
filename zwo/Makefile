@@ -19,7 +19,7 @@ $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(TARGET) *.bin *.fits *.png
+	rm -f $(OBJS) $(TARGET)
 
 clean-img:
 	rm -f *.bin *.fits *.png
