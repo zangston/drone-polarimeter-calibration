@@ -4,7 +4,7 @@ CXXFLAGS := -I/home/declan/RPI/zwo/dependencies/zwo-asi-sdk/1.36/linux_sdk/inclu
 LDFLAGS := -L/home/declan/RPI/zwo/dependencies/zwo-asi-sdk/1.36/linux_sdk/lib \
            -lASICamera2
 
-TARGET := capture-exposure
+TARGET := capture-exposure.out
 SRCS := capture-exposure.cpp
 OBJS := $(SRCS:.cpp=.o)
 
