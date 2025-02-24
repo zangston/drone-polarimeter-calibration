@@ -22,17 +22,24 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    int image_size = camera_info.MaxWidth * camera_info.MaxHeight;
+    int width = camera_info.MaxWidth;
+    int height = camera_info.MaxHeight;
     int bytes_per_pixel = (camera_info.BitDepth > 8) ? 2 : 1;
-    image_size *= bytes_per_pixel;
-    
+    int image_size = width * height * bytes_per_pixel;
+
     if (ASIOpenCamera(camera_info.CameraID) != ASI_SUCCESS || ASIInitCamera(camera_info.CameraID) != ASI_SUCCESS) {
         cerr << "Error initializing camera" << endl;
         return 1;
     }
-    
-    double exposure_seconds = (argc > 1) ? stod(argv[1]) : 20;
-    long exposure_time = exposure_seconds * 1000000;
+
+    ASI_IMG_TYPE img_type = (camera_info.BitDepth > 8) ? ASI_IMG_RAW16 : ASI_IMG_RAW8;
+    if (ASISetROIFormat(camera_info.CameraID, width, height, 1, img_type) != ASI_SUCCESS) {
+        cerr << "Error setting ROI format" << endl;
+        return 1;
+    }
+
+    double exposure_seconds = (argc > 1) ? stod(argv[1]) : 20.0;
+    long exposure_time = static_cast<long>(exposure_seconds * 1e6);
     if (ASISetControlValue(camera_info.CameraID, ASI_EXPOSURE, exposure_time, ASI_FALSE) != ASI_SUCCESS) {
         cerr << "Error setting exposure time" << endl;
         return 1;
@@ -47,23 +54,26 @@ int main(int argc, char *argv[]) {
     do {
         ASIGetExpStatus(camera_info.CameraID, &exp_status);
     } while (exp_status == ASI_EXP_WORKING);
-    
+
     if (exp_status != ASI_EXP_SUCCESS) {
         cerr << "Exposure failed" << endl;
         return 1;
     }
-    
+
     vector<unsigned char> asi_image(image_size);
     if (ASIGetDataAfterExp(camera_info.CameraID, asi_image.data(), image_size) != ASI_SUCCESS) {
         cerr << "Error retrieving image data" << endl;
         return 1;
     }
 
-    time_t now = time(0);
+    time_t now = time(nullptr);
     tm *ltm = localtime(&now);
     stringstream filename;
-    filename << "exposure-" << 1900 + ltm->tm_year << setfill('0') << setw(2) << 1 + ltm->tm_mon
-             << setw(2) << ltm->tm_mday << "-" << setw(2) << ltm->tm_hour << setw(2) << ltm->tm_min
+    filename << "exposure-" << (1900 + ltm->tm_year)
+             << setfill('0') << setw(2) << (1 + ltm->tm_mon)
+             << setw(2) << ltm->tm_mday << "-"
+             << setw(2) << ltm->tm_hour
+             << setw(2) << ltm->tm_min
              << setw(2) << ltm->tm_sec << ".bin";
 
     ofstream output_file(filename.str(), ios::binary);
@@ -75,5 +85,6 @@ int main(int argc, char *argv[]) {
     output_file.close();
 
     cout << "Exposure data saved to " << filename.str() << endl;
+    ASICloseCamera(camera_info.CameraID);
     return 0;
 }
