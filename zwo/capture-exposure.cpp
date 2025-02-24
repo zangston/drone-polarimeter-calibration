@@ -29,20 +29,37 @@ int main(int argc, char *argv[]) {
     int bytes_per_pixel = (camera_info.BitDepth > 8) ? 2 : 1;
     int image_size = width * height * bytes_per_pixel;
 
-    if (ASIOpenCamera(camera_info.CameraID) != ASI_SUCCESS || ASIInitCamera(camera_info.CameraID) != ASI_SUCCESS) {
-        cerr << "Error initializing camera" << endl;
+    if (ASIOpenCamera(camera_info.CameraID) != ASI_SUCCESS) {
+        cerr << "Error opening camera" << endl;
         return 1;
     }
 
-    double exposure_seconds = (argc > 1) ? stod(argv[1]) : 20;
-    long exposure_time = exposure_seconds * 1000000;
+    if (ASIInitCamera(camera_info.CameraID) != ASI_SUCCESS) {
+        cerr << "Error initializing camera" << endl;
+        ASICloseCamera(camera_info.CameraID);
+        return 1;
+    }
+
+    // Set ROI format: full resolution, binning 1, and RAW16 mode if bit depth > 8
+    ASI_IMG_TYPE img_type = (camera_info.BitDepth > 8) ? ASI_IMG_RAW16 : ASI_IMG_RAW8;
+    if (ASISetROIFormat(camera_info.CameraID, width, height, 1, img_type) != ASI_SUCCESS) {
+        cerr << "Error setting ROI format" << endl;
+        ASICloseCamera(camera_info.CameraID);
+        return 1;
+    }
+
+    double exposure_seconds = (argc > 1) ? stod(argv[1]) : 20.0;
+    long exposure_time = static_cast<long>(exposure_seconds * 1e6); // Convert to microseconds
+
     if (ASISetControlValue(camera_info.CameraID, ASI_EXPOSURE, exposure_time, ASI_FALSE) != ASI_SUCCESS) {
         cerr << "Error setting exposure time" << endl;
+        ASICloseCamera(camera_info.CameraID);
         return 1;
     }
 
     if (ASIStartExposure(camera_info.CameraID, ASI_FALSE) != ASI_SUCCESS) {
         cerr << "Error starting exposure" << endl;
+        ASICloseCamera(camera_info.CameraID);
         return 1;
     }
 
@@ -53,12 +70,14 @@ int main(int argc, char *argv[]) {
     
     if (exp_status != ASI_EXP_SUCCESS) {
         cerr << "Exposure failed" << endl;
+        ASICloseCamera(camera_info.CameraID);
         return 1;
     }
     
     vector<unsigned char> asi_image(image_size);
     if (ASIGetDataAfterExp(camera_info.CameraID, asi_image.data(), image_size) != ASI_SUCCESS) {
         cerr << "Error retrieving image data" << endl;
+        ASICloseCamera(camera_info.CameraID);
         return 1;
     }
 
@@ -70,19 +89,26 @@ int main(int argc, char *argv[]) {
         image = Mat(height, width, CV_8UC1, asi_image.data());
     }
 
-    // Save with timestamp
-    time_t now = time(0);
+    // Generate timestamped filename
+    time_t now = time(nullptr);
     tm *ltm = localtime(&now);
     stringstream filename;
-    filename << "exposure-" << 1900 + ltm->tm_year << setfill('0') << setw(2) << 1 + ltm->tm_mon
-             << setw(2) << ltm->tm_mday << "-" << setw(2) << ltm->tm_hour << setw(2) << ltm->tm_min
+    filename << "exposure-" << (1900 + ltm->tm_year)
+             << setfill('0') << setw(2) << (1 + ltm->tm_mon)
+             << setw(2) << ltm->tm_mday << "-"
+             << setw(2) << ltm->tm_hour
+             << setw(2) << ltm->tm_min
              << setw(2) << ltm->tm_sec << ".png";
 
     if (!imwrite(filename.str(), image)) {
         cerr << "Error saving image" << endl;
+        ASICloseCamera(camera_info.CameraID);
         return 1;
     }
 
     cout << "Exposure image saved to " << filename.str() << endl;
+
+    // Cleanup
+    ASICloseCamera(camera_info.CameraID);
     return 0;
 }
