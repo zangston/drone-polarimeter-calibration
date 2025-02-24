@@ -1,5 +1,7 @@
 */ip_address.txt
 */ip_check.sh
+*/.env
+*/*.log
 
 .vscode/
 
