@@ -13,3 +13,6 @@
 [submodule "zwo-asi-sdk"]
 	path = zwo-asi-sdk
 	url = git@github.com:zangston/zwo-asi-sdk.git
+[submodule "zwo/dependencies/Elefits"]
+	path = zwo/dependencies/Elefits
+	url = https://github.com/CNES/EleFits.git

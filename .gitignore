@@ -1,7 +1,12 @@
 */ip_address.txt
+*/ip_check.sh
 
 .vscode/
 
 readout/storage/
 
 *.out
+*.o
+*.a
+
+.ipynb_checkpoints/
