@@ -6,9 +6,9 @@ STEP_DELAY=1             # Time (seconds) between motor stop and exposure
 CSV_FILE="motor_exposure_log.csv"  # CSV file to store motor angles and filenames
 
 # Path to external programs
-MOTOR_SCRIPT="/path/to/motor_control_script.py"  # Replace with actual path
-EXPOSURE_CMD="/path/to/exposure_program"         # Replace with actual exposure command
-ENCODER_CMD="/path/to/encoder_readout"           # Replace with actual command to read encoder angle
+MOTOR_SCRIPT="/home/declan/RPI/motor/scripts/motor_control.sh"
+EXPOSURE_CMD="/home/declan/RPI/zwo/capture-exposure.out"
+ENCODER_CMD="/home/declan/RPI/readout/quad_enc/declan-python-pickle"
 
 # Ensure CSV file has a header
 echo "Exposure_File,Motor_Angle" > "$CSV_FILE"
@@ -16,20 +16,20 @@ echo "Exposure_File,Motor_Angle" > "$CSV_FILE"
 for i in $(seq 1 $NUM_EXPOSURES); do
     echo "Starting exposure $i of $NUM_EXPOSURES"
 
-    # Step the motor (modify this if a different command is needed)
-    python3 "$MOTOR_SCRIPT" --step  # Replace with actual step command if needed
+    # Step the motor (now supported in motor_control.sh)
+    "$MOTOR_SCRIPT" step  # Optional: add speed argument if needed
 
     # Wait for motor to stabilize before taking an exposure
     sleep "$STEP_DELAY"
 
     # Read motor angle from encoder
-    MOTOR_ANGLE=$($ENCODER_CMD)  # Modify this to match encoder output parsing
+    MOTOR_ANGLE=$("$ENCODER_CMD")  # Modify this if encoder output needs parsing
 
     # Generate exposure filename
     EXPOSURE_FILE="exposure_${i}.bin"
 
     # Take exposure
-    $EXPOSURE_CMD --output "$EXPOSURE_FILE"
+    "$EXPOSURE_CMD" --output "$EXPOSURE_FILE"
 
     # Log motor angle and exposure filename
     echo "$EXPOSURE_FILE,$MOTOR_ANGLE" >> "$CSV_FILE"
