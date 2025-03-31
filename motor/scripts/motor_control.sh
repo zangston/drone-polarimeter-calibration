@@ -45,9 +45,10 @@ set_direction() {
     esac
 }
 
-# Spin motor at a given speed
+# Spin motor continuously at given speed
 spin() {
-    run_command pigs hp 19 "$1" 5000
+    SPEED=${1:-1000}  # Default speed if not provided
+    run_command pigs hp 19 "$SPEED" 5000
 }
 
 # Stop motor
@@ -55,19 +56,11 @@ stop() {
     run_command pigs w 19 0
 }
 
-# Step motor (new command)
-step() {
-    SPEED=${1:-1000}  # Default speed is 1000 if not provided
-    run_command pigs hp 19 "$SPEED" 5000
-    sleep 0.1
-    stop
-}
-
 # Main script execution
 check_pigpiod
 
 if [[ $# -lt 1 ]]; then
-    echo "Usage: $0 {enable|disable|forward|backward|stop|step} [speed]"
+    echo "Usage: $0 {enable|disable|forward|backward|spin|stop} [speed]"
     exit 1
 fi
 
@@ -82,22 +75,17 @@ case "$ACTION" in
         disable
         ;;
     forward|backward)
-        if [[ -z "$PARAM" ]]; then
-            echo "Please provide a speed for spinning the motor."
-            exit 1
-        fi
         set_direction "$ACTION"
+        ;;
+    spin)
         spin "$PARAM"
         ;;
     stop)
         stop
         ;;
-    step)
-        step "$PARAM"
-        ;;
     *)
         echo "Unknown action: $ACTION"
-        echo "Usage: $0 {enable|disable|forward|backward|stop|step} [speed]"
+        echo "Usage: $0 {enable|disable|forward|backward|spin|stop} [speed]"
         exit 1
         ;;
 esac
