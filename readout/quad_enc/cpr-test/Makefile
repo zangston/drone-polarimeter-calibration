@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -O2
-TARGET = cpr-test
+TARGET = cpr-test.out
 SRC = cpr-test.c
 
 all: $(TARGET)
