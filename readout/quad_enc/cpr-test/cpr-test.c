@@ -73,16 +73,29 @@ void spin_motor_until_target_CPR(int fd, int target_CPR) {
     system("/home/declan/RPI/motor/scripts/motor_control.sh forward");
 
     sendQSBCommand(fd, "R0E");
-    int initial_count = readQSBResponse(fd);
-    int current_count = initial_count;
+    int prev_count = readQSBResponse(fd);
+    int accumulated_change = 0;
 
     system("/home/declan/RPI/motor/scripts/motor_control.sh spin 1000"); // Start spinning
 
-    while (abs(current_count - initial_count) < target_CPR) {
-        usleep(50000); // Allow encoder to register change
+    while (accumulated_change < target_CPR) {
+        usleep(50000);
         sendQSBCommand(fd, "R0E");
-        current_count = readQSBResponse(fd);
+        int current_count = readQSBResponse(fd);
         printf("Current Encoder Count: %d\n", current_count);
+
+        // Compute incremental change
+        int delta = current_count - prev_count;
+
+        // Handle wraparound
+        if (delta > 200) {        // If the jump is too large, it wrapped around negative
+            delta -= 400;
+        } else if (delta < -200) { // If the jump is too negative, it wrapped around positive
+            delta += 400;
+        }
+
+        accumulated_change += abs(delta);
+        prev_count = current_count;
     }
 
     system("/home/declan/RPI/motor/scripts/motor_control.sh stop");
@@ -97,7 +110,7 @@ int main() {
     int initial_count = readQSBResponse(serial_fd);
     printf("Initial Encoder Count: %d\n", initial_count);
 
-    int target_CPR = 100; // Adjustable variable for counts per revolution
+    int target_CPR = 391; // Adjustable variable for counts per revolution
     spin_motor_until_target_CPR(serial_fd, target_CPR);
 
     sendQSBCommand(serial_fd, "R0E");
