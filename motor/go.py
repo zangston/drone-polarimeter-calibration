@@ -1,31 +1,43 @@
 import subprocess
-import keyboard
-import os
+import signal
 
 file_path = "/home/declan/RPI/"
 spin_rate = "250"
 
 def stop():
     try:
-        subprocess.run(["python3", file_path + "motor/scripts/motor_control.py", "stop"], check=True)
+        subprocess.run([file_path + "motor/scripts/motor_control.sh", "stop"], check=True)
     except subprocess.CalledProcessError as e:
-        print(f"Error: {e}")
-
-keyboard.add_hotkey('q', stop)
+        print(f"Error stopping motor: {e}")
 
 try:
-    # Ensure pigpiod is running without requiring a password
-    subprocess.run(["sudo", "pigpiod"], check=True)
+    # Enable motor
+    subprocess.run([file_path + "motor/scripts/motor_control.sh", "enable"], check=True)
 
-    # Motor Control
-    subprocess.run(["python3", file_path + "motor/scripts/motor_control.py", "enable"], check=True)
-    subprocess.run(["python3", file_path + "motor/scripts/motor_control.py", "backward", spin_rate], check=True)
+    # Set direction to backward
+    subprocess.run([file_path + "motor/scripts/motor_control.sh", "backward"], check=True)
 
-    # Encoder Readout
-    subprocess.run([file_path + "readout/quad_enc/declan-python-pickle"])  # Ensure this script handles arguments if needed
+    # Spin motor at specified rate
+    subprocess.run([file_path + "motor/scripts/motor_control.sh", "spin", spin_rate], check=True)
 
-    keyboard.wait()
+    # Run encoder readout
+    readout = subprocess.Popen([file_path + "readout/quad_enc/declan-python-pickle.out"])
+
+    # Wait for user to press Enter
+    input("Motor running. Press Enter to stop...\n")
+
+    # Send SIGINT (like pressing Ctrl+C)
+    readout.send_signal(signal.SIGINT)
+    readout.wait()  # Wait for graceful shutdown
+
+    # Stop motor
+    stop()
+
 except (subprocess.CalledProcessError, KeyboardInterrupt) as e:
-    print(f"Error: {e}")
-finally:
-    keyboard.remove_hotkey('q')
+    print(f"Error during execution: {e}")
+    try:
+        readout.send_signal(signal.SIGINT)
+        readout.wait()
+    except Exception:
+        pass
+    stop()
