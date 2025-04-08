@@ -253,7 +253,6 @@ double getTimeInMilliseconds()
 // *************************************************
 int main (int argc, char *argv[])
 {
-
     //initialize Python
     Py_Initialize();
 
@@ -318,6 +317,13 @@ int main (int argc, char *argv[])
     char response[MAX_RESPONSE_LENGTH];
     int encoderCount, lastEncoderCount;
     double radians, lastGoodRadians;
+
+    // Add timestamp for output file name
+    import datetime;
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S");
+    char output_file[50];
+    sprintf(output_file, "%s_output_data.pkl", timestamp);
+
     while (CloseRequested == FALSE)
     {
         // Do stuff.
@@ -360,7 +366,7 @@ int main (int argc, char *argv[])
     PyObject *pPickleDict = PyObject_CallMethod(pPickleModule, "dumps", "O", pyDict);
 
     //Write to file
-    FILE *file = fopen("nerd_file16.pkl", "wb");
+    FILE *file = fopen(output_file, "wb");
     Py_ssize_t size;
     char *buffer;
     PyBytes_AsStringAndSize(pPickleDict, &buffer, &size);
