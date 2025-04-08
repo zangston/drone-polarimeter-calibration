@@ -25,7 +25,6 @@
 // Element: Response Register Data TimeStamp '!' EOR
 // Bytes : 1 2 8 8 1 1..2
 //
-//
 // Response, Register, Data, and '!' are always present.
 //
 // The rest of the elements are determined by the EOR (15) register.
@@ -318,11 +317,10 @@ int main (int argc, char *argv[])
     int encoderCount, lastEncoderCount;
     double radians, lastGoodRadians;
 
-    // Add timestamp for output file name
-    import datetime;
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S");
-    char output_file[50];
-    sprintf(output_file, "%s_output_data.pkl", timestamp);
+    // Get the start time for the timestamped filename
+    double startTime = getTimeInMilliseconds();
+    char filename[128];
+    snprintf(filename, sizeof(filename), "nerd_file_%.0f.pkl", startTime);  // Using timestamp for filename
 
     while (CloseRequested == FALSE)
     {
@@ -354,26 +352,34 @@ int main (int argc, char *argv[])
             //break;
         }
 
-        //add to Python dict
+        // Add to Python dict
         PyObject *pyRadians = PyFloat_FromDouble(radians);
         PyObject *pyTimestamp = PyFloat_FromDouble(timestamp);
         PyDict_SetItem(pyDict, pyTimestamp, pyRadians);
     }
 
-    //get rid of all the extra zeros and the repeating values then we will be golden!!!
-    //pickle the heck out of it
+    // Get the current timestamp for filename
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    strftime(filename, sizeof(filename), "encoder_data_%Y%m%d_%H%M%S.pkl", t);
+
+    // Pickle the data
     PyObject *pPickleModule = PyImport_ImportModule("pickle");
     PyObject *pPickleDict = PyObject_CallMethod(pPickleModule, "dumps", "O", pyDict);
 
-    //Write to file
-    FILE *file = fopen(output_file, "wb");
+    // Write to file with a more informative filename based on the timestamp
+    FILE *file = fopen(filename, "wb");
+    if (file == NULL) {
+        printQSBError("Error opening file for saving data");
+    }
+
     Py_ssize_t size;
     char *buffer;
     PyBytes_AsStringAndSize(pPickleDict, &buffer, &size);
     fwrite(buffer, size, 1, file);
     fclose(file);
 
-    // //cleanup
+    // Cleanup
     Py_DECREF(pyDict);
     Py_DECREF(pPickleModule);
     Py_DECREF(pPickleDict);
