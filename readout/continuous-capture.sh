@@ -19,7 +19,7 @@ echo "Saving exposures to $RAW_DIR. Press Ctrl+C to stop."
 
 cd "$RAW_DIR"
 while true; do
-    "$CAPTURE_BIN" 0.001 > "exposure-$(date +%Y%m%d-%H%M%S).bin"
+    "$CAPTURE_BIN" 0.001
     # Removed file count variable increment; file count is determined on trap
     sleep $INTERVAL
 done
