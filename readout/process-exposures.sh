@@ -17,25 +17,29 @@ if [ ! -d "$RAW_DIR" ]; then
     exit 1
 fi
 
-# Create output subdirectories
+# Process each .bin file in the raw directory
+# Create output directories
 FITS_DIR="$PROCESSED_DIR/fits"
-GRAY_DIR="$PROCESSED_DIR/gray"
+GRAY_DIR="$PROCESSED_DIR/grayscale"
 COLOR_DIR="$PROCESSED_DIR/color"
 mkdir -p "$FITS_DIR" "$GRAY_DIR" "$COLOR_DIR"
-
-# Process each .bin file in the raw directory
 for bin_file in "$RAW_DIR"/*.bin; do
     if [ -f "$bin_file" ]; then
         echo "Processing $bin_file"
+
+        # Change to raw directory
+
+        # Get just the filename, not full path
+        bin_filename=$(basename "$bin_file")
+
         python3 "$PY_SCRIPT" "$bin_file"
 
-        # Get base filename without extension
-        base_name=$(basename "$bin_file" .bin)
+        base_name=$(basename "$bin_filename" .bin)
 
         # Move output files to appropriate folders
-        mv "${base_name}.FITS" "$FITS_DIR/" 2>/dev/null
-        mv "${base_name}_gray.png" "$GRAY_DIR/" 2>/dev/null
-        mv "${base_name}_color.png" "$COLOR_DIR/" 2>/dev/null
+        mv "$RAW_DIR/${base_name}.fits" "$FITS_DIR/"
+        mv "$RAW_DIR/${base_name}_gray.png" "$GRAY_DIR/"
+        mv "$RAW_DIR/${base_name}_color.png" "$COLOR_DIR/"
     fi
 done
 
