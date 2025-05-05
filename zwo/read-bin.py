@@ -3,6 +3,30 @@ import matplotlib.pyplot as plt
 from astropy.io import fits
 import sys
 import os
+from datetime import datetime
+
+def extract_timestamp_from_filename(filename):
+    """
+    Extracts timestamp from filenames like:
+    exposure-YYYYMMDD-HHMMSS.bin
+    """
+    base = os.path.basename(filename)
+    name, _ = os.path.splitext(base)
+
+    try:
+        # Expecting something like 'exposure-20250504-224836'
+        parts = name.split("-")
+        if len(parts) < 3:
+            raise ValueError("Filename format incorrect for timestamp extraction")
+
+        date_str = parts[1]
+        time_str = parts[2]
+
+        dt = datetime.strptime(date_str + time_str, "%Y%m%d%H%M%S")
+        return dt
+    except Exception as e:
+        print(f"Failed to parse timestamp from filename '{filename}': {e}")
+        return None
 
 def binary_to_fits(binary_file):
     # Define camera dimensions
@@ -12,46 +36,44 @@ def binary_to_fits(binary_file):
     with open(binary_file, "rb") as f:
         pixel_data = np.frombuffer(f.read(), dtype=np.uint16).reshape((height, width))
 
-    # Normalize data for visualization (scale 14-bit values to 8-bit)
+    # Normalize for 8-bit preview
     image_data = (pixel_data / pixel_data.max() * 255).astype(np.uint8)
 
-    # Extract the individual color channels
-    red_channel = image_data[::2, ::2]  # Assuming red is in odd rows and columns (example, adjust based on your data layout)
-    green1_channel = image_data[::2, 1::2]  # Assuming green1 is in alternating rows
-    green2_channel = image_data[1::2, ::2]  # Assuming green2 is in alternating columns
-    blue_channel = image_data[1::2, 1::2]  # Assuming blue is in even rows and columns
+    # Extract the individual color channels (adjust indexing if needed)
+    red_channel = image_data[::2, ::2]
+    green1_channel = image_data[::2, 1::2]
+    green2_channel = image_data[1::2, ::2]
+    blue_channel = image_data[1::2, 1::2]
 
-    # Create a FITS file with multiple extensions
-    fits_file = os.path.splitext(binary_file)[0] + ".fits"
+    # Extract timestamp from filename
+    timestamp = extract_timestamp_from_filename(binary_file)
+    timestamp_str = timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z" if timestamp else "UNKNOWN"
+
+    # Build FITS HDU list
     hdul = fits.HDUList()
 
-    # Add the original grayscale image as the first extension
     hdu_gray = fits.PrimaryHDU(image_data)
+    hdu_gray.header['DATE-OBS'] = timestamp_str  # UTC timestamp with milliseconds
     hdul.append(hdu_gray)
 
-    # Add individual color channels as extensions
+    # Add color channels
     hdul.append(fits.ImageHDU(red_channel, name='RED'))
     hdul.append(fits.ImageHDU(green1_channel, name='GREEN1'))
     hdul.append(fits.ImageHDU(green2_channel, name='GREEN2'))
     hdul.append(fits.ImageHDU(blue_channel, name='BLUE'))
 
-    # Create the full-color composite image (stack the channels)
+    # Composite image
     color_image = np.stack([red_channel, green1_channel, blue_channel], axis=-1)
     hdul.append(fits.ImageHDU(color_image, name='COLOR_COMPOSITE'))
 
-    # Save all data to the FITS file
+    # Write FITS file
+    fits_file = os.path.splitext(binary_file)[0] + ".fits"
     hdul.writeto(fits_file, overwrite=True)
-    print(f"Saved all data to FITS file: {fits_file}")
+    print(f"Saved FITS file with timestamp header: {fits_file}")
 
-    # Save image as PNG
-    png_file = os.path.splitext(binary_file)[0] + "_color.png"
-    plt.imsave(png_file, color_image)
-    print(f"Saved Color PNG image: {png_file}")
-
-    # Save grayscale image as PNG
-    png_file_gray = os.path.splitext(binary_file)[0] + "_gray.png"
-    plt.imsave(png_file_gray, image_data, cmap="gray")
-    print(f"Saved Grayscale PNG image: {png_file_gray}")
+    # Save previews
+    plt.imsave(fits_file.replace(".fits", "_color.png"), color_image)
+    plt.imsave(fits_file.replace(".fits", "_gray.png"), image_data, cmap="gray")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
