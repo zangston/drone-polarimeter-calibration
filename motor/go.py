@@ -21,7 +21,7 @@ try:
     subprocess.run([file_path + "motor/scripts/motor_control.sh", "spin", spin_rate], check=True)
 
     # Run encoder readout
-    readout = subprocess.Popen([file_path + "motor/quad_enc/declan-python-pickle.out"])
+    readout = subprocess.Popen([file_path + "motor/quad_enc/record-encoder-data.out"])
 
     # Wait for user to press Enter
     input("Motor running. Press Enter to stop...\n")

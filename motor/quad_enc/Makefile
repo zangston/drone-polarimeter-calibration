@@ -1,8 +1,8 @@
 CC = gcc
 CFLAGS = -I/usr/include/python3.10
 LIBS = -lpython3.10
-SRC = declan-python-pickle.c
-OUT = declan-python-pickle.out
+SRC = record-encoder-data.c
+OUT = record-encoder-data.out
 
 all: $(OUT)
 
