@@ -13,7 +13,9 @@ if len(sys.argv) < 2:
     print("Usage: python script.py <path_to_fits_directory>")
     sys.exit(1)
 
-fits_dir = sys.argv[1]
+base_dir = sys.argv[1]
+fits_dir = os.path.join(base_dir, "processed", "fits")
+timestamp_str = os.path.basename(base_dir).replace("exposures-", "")
 
 # Prompt for pixel location
 x_pix = int(input("Enter x pixel value: "))
@@ -60,12 +62,15 @@ box()
 grab_and_plot()
 
 plt.figure(figsize=(10, 6))
-plt.plot(timestamp_list, pix_val_list, label='Pixel Value')
-plt.plot(timestamp_list, avg_pix_list, label='Average Pixel Value', linestyle='--')
+plt.scatter(timestamp_list, pix_val_list, label='Pixel Value')
+plt.scatter(timestamp_list, avg_pix_list, label='Average Pixel Value', marker='x')
 plt.xticks(rotation=45)
 plt.xlabel("Timestamp")
 plt.ylabel("Pixel Values")
 plt.title("Pixel and Average Pixel Values Over Time")
 plt.legend()
 plt.tight_layout()
+output_name = os.path.join(base_dir, f"pixel_plot_{timestamp_str}.png")
+plt.savefig(output_name)
+print(f"Output diagram saved to {output_name}")
 plt.show()
