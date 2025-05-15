@@ -10,7 +10,7 @@ if len(sys.argv) < 2:
 pkl_file = sys.argv[1]
 
 with open(pkl_file, "rb") as f:
-    spacetime = pickle.load(f)  # {time : radians}
+    spacetime = pickle.load(f)  # {time : encoder count}
 
 loc = []
 time = []
@@ -30,7 +30,7 @@ for key, val in spacetime.items():
             old_val = val
 
 plt.figure()
-plt.ylabel("Motor Position [Radians]")
+plt.ylabel("Motor Position [Encoder Counts]")
 plt.xlabel("Time [seconds]")
 plt.scatter(time, loc)
 
