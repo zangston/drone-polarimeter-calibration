@@ -4,6 +4,7 @@
 #include <ctime>
 #include <iomanip>
 #include "/home/declan/RPI/zwo/dependencies/zwo-asi-sdk/1.36/linux_sdk/include/ASICamera2.h"
+#include <sys/time.h>
 
 using namespace std;
 
@@ -66,15 +67,20 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    time_t now = time(nullptr);
-    tm *ltm = localtime(&now);
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+    struct tm *ltm = localtime(&tv.tv_sec);
+
     stringstream filename;
-    filename << "exposure-" << (1900 + ltm->tm_year)
+    filename << "exposure-"
+             << (1900 + ltm->tm_year)
              << setfill('0') << setw(2) << (1 + ltm->tm_mon)
              << setw(2) << ltm->tm_mday << "-"
              << setw(2) << ltm->tm_hour
              << setw(2) << ltm->tm_min
-             << setw(2) << ltm->tm_sec << ".bin";
+             << setw(2) << ltm->tm_sec << "-"
+             << setfill('0') << setw(3) << (tv.tv_usec / 1000)
+             << ".bin";
 
     ofstream output_file(filename.str(), ios::binary);
     if (!output_file) {

@@ -8,21 +8,23 @@ from datetime import datetime
 def extract_timestamp_from_filename(filename):
     """
     Extracts timestamp from filenames like:
-    exposure-YYYYMMDD-HHMMSS.bin
+    exposure-YYYYMMDD-HHMMSS-mmm.bin
     """
     base = os.path.basename(filename)
     name, _ = os.path.splitext(base)
 
     try:
-        # Expecting something like 'exposure-20250504-224836'
+        # Expecting something like 'exposure-20250504-224836-153'
         parts = name.split("-")
-        if len(parts) < 3:
+        if len(parts) < 4:
             raise ValueError("Filename format incorrect for timestamp extraction")
 
         date_str = parts[1]
         time_str = parts[2]
+        ms_str = parts[3]
 
         dt = datetime.strptime(date_str + time_str, "%Y%m%d%H%M%S")
+        dt = dt.replace(microsecond=int(ms_str) * 1000)  # Convert milliseconds to microseconds
         return dt
     except Exception as e:
         print(f"Failed to parse timestamp from filename '{filename}': {e}")
