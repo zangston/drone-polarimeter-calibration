@@ -1,55 +1,120 @@
-import matplotlib.pyplot as plt
-from astropy.io import fits
-import numpy as np
+#!/usr/bin/env python3
+
 import sys
 import os
+from glob import glob
+from astropy.io import fits
+from datetime import datetime, timezone, timedelta
+import pickle
+import numpy as np
+import matplotlib.pyplot as plt
 
-pixel_sum_list = []
-timestamp_list = []
+from datetime import datetime, timezone
+import numpy as np
+import pickle
 
-# Get directory from command line
-if len(sys.argv) < 2:
-    print("Usage: python script.py <path_to_fits_directory>")
-    sys.exit(1)
+def load_encoder_data(pkl_path):
+    with open(pkl_path, "rb") as f:
+        data = pickle.load(f)
 
-base_dir = sys.argv[1]
-fits_dir = os.path.join(base_dir, "processed", "fits")
-timestamp_str = os.path.basename(base_dir).replace("exposures-", "")
+    timestamps_ms = np.array(list(data.keys()))
+    angles = np.array(list(data.values()))
 
-def grab_and_plot():
-    global pixel_sum_list, timestamp_list
+    # Convert ms since epoch (UTC) to datetime in UTC
+    encoder_times = np.array([
+        datetime.fromtimestamp(ts / 1000.0, tz=timezone.utc)
+        for ts in timestamps_ms
+    ])
 
-    fits_files = sorted(f for f in os.listdir(fits_dir) if f.endswith(".fits"))
+    print("Encoder time range:")
+    print("Start:", encoder_times[0])
+    print("End:", encoder_times[-1])
 
-    for i, filename in enumerate(fits_files, 1):
-        hdu1 = fits.open(os.path.join(fits_dir, filename))
+    return encoder_times, angles
 
-        data = hdu1['GREEN1'].data
+def find_closest_encoder_angle(fits_dt, encoder_times, encoder_angles):
+    fits_ts = fits_dt.timestamp()
+    encoder_ts_array = np.array([et.timestamp() for et in encoder_times])
 
-        # Compute pixel sum
+    if fits_ts < encoder_ts_array[0] or fits_ts > encoder_ts_array[-1]:
+        return None
+
+    idx = np.searchsorted(encoder_ts_array, fits_ts)
+    if idx == 0:
+        closest_idx = 0
+    elif idx == len(encoder_ts_array):
+        closest_idx = len(encoder_ts_array) - 1
+    else:
+        before = encoder_ts_array[idx - 1]
+        after = encoder_ts_array[idx]
+        closest_idx = idx - 1 if abs(fits_ts - before) < abs(fits_ts - after) else idx
+
+    return encoder_angles[closest_idx]
+
+def main():
+    if len(sys.argv) != 3:
+        print(f"Usage: {sys.argv[0]} <fits_exposure_dir> <encoder_data.pkl>")
+        sys.exit(1)
+
+    fits_dir = sys.argv[1]
+    encoder_pkl = sys.argv[2]
+
+    fits_path = os.path.join(fits_dir, "processed", "fits")
+    print(f"Looking for FITS files in: {fits_path}")
+
+    fits_files = sorted(glob(os.path.join(fits_path, "*.fits")))
+    if not fits_files:
+        print(f"No FITS files found in {fits_path}")
+        sys.exit(1)
+    print(f"Found {len(fits_files)} FITS files")
+
+    encoder_times, encoder_angles = load_encoder_data(encoder_pkl)
+
+    fits_times = []
+    pixel_sums = []
+    encoder_angles_for_fits = []
+
+    for i, ffile in enumerate(fits_files):
+        hdr = fits.getheader(ffile)
+        fits_time_str = hdr.get('DATE-OBS', None)
+        if fits_time_str is None:
+            print(f"No DATE-OBS in FITS header for {ffile}")
+            continue
+
+        # Adjust FITS timestamp from local time to UTC
+        fits_dt = datetime.fromisoformat(fits_time_str.replace('Z', '+00:00'))
+        fits_dt = fits_dt + timedelta(hours=4)  # Convert to UTC
+        fits_dt = fits_dt.replace(tzinfo=timezone.utc)
+
+        data = fits.getdata(ffile)
         pixel_sum = np.sum(data)
-        pixel_sum_list.append(pixel_sum)
 
-        # Time stamp
-        header = hdu1[0].header  # Primary HDU
-        timestamp = header['DATE-OBS']
-        timestamp_list.append(timestamp)
+        angle = find_closest_encoder_angle(fits_dt, encoder_times, encoder_angles)
+        if angle is None:
+            print(f"Warning: FITS timestamp {fits_dt.isoformat()} outside encoder range")
+            continue
 
-        hdu1.close()
+        print(f"Frame {i+1}: Time={fits_dt.isoformat()}, PixelSum={pixel_sum}, Angle={angle:.3f}")
+        fits_times.append(fits_dt)
+        pixel_sums.append(pixel_sum)
+        encoder_angles_for_fits.append(angle)
 
-        print(f"Image {i} - Time: {timestamp}, Pixel Sum: {pixel_sum}")
+    if not fits_times:
+        print("No matching frames to plot.")
+        sys.exit(1)
 
-grab_and_plot()
+    plt.figure(figsize=(12,6))
+    plt.plot(range(len(fits_times)), pixel_sums, label='Pixel Sum')
+    plt.plot(range(len(fits_times)), encoder_angles_for_fits, label='Encoder Angle (rad)')
+    plt.xlabel('Frame Number')
+    plt.ylabel('Value')
+    plt.title('Pixel Sum and Encoder Angle vs Frame Number')
+    plt.legend()
+    plt.tight_layout()
 
-plt.figure(figsize=(10, 6))
-plt.scatter(timestamp_list, pixel_sum_list, label='Pixel Sum')
-plt.xticks(rotation=45)
-plt.xlabel("Timestamp")
-plt.ylabel("Total Pixel Value")
-plt.title("Total Pixel Value Over Time")
-plt.legend()
-plt.tight_layout()
-output_name = os.path.join(base_dir, f"pixel_plot_{timestamp_str}.png")
-plt.savefig(output_name)
-print(f"Output diagram saved to {output_name}")
-plt.show()
+    save_path = os.path.join(fits_dir, "pixel_sum_encoder_angle_plot.png")
+    plt.savefig(save_path)
+    print(f"Plot saved to {save_path}")
+
+if __name__ == "__main__":
+    main()
