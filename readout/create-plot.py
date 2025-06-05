@@ -104,11 +104,10 @@ def main():
         sys.exit(1)
 
     plt.figure(figsize=(12,6))
-    plt.plot(range(len(fits_times)), pixel_sums, label='Pixel Sum')
-    plt.plot(range(len(fits_times)), encoder_angles_for_fits, label='Encoder Angle (rad)')
-    plt.xlabel('Frame Number')
-    plt.ylabel('Value')
-    plt.title('Pixel Sum and Encoder Angle vs Frame Number')
+    plt.plot(encoder_angles_for_fits, pixel_sums, 'o', label='Pixel Sum vs Encoder Angle')
+    plt.xlabel('Encoder Angle (rad)')
+    plt.ylabel('Pixel Sum')
+    plt.title('Pixel Sum vs Encoder Angle')
     plt.legend()
     plt.tight_layout()
 
