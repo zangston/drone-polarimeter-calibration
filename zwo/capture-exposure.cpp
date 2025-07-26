@@ -3,12 +3,27 @@
 #include <vector>
 #include <ctime>
 #include <iomanip>
-#include "/home/declan/RPI/zwo/dependencies/zwo-asi-sdk/1.36/linux_sdk/include/ASICamera2.h"
+#include <string>
 #include <sys/time.h>
+#include <cstring>
+#include "/home/declan/RPI/zwo/dependencies/zwo-asi-sdk/1.36/linux_sdk/include/ASICamera2.h"
 
 using namespace std;
 
 int main(int argc, char *argv[]) {
+    // === Default values ===
+    double exposure_seconds = 20.0;
+    int gain_value = 0;
+
+    // === Parse command-line args ===
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--exposure-time") == 0 && i + 1 < argc) {
+            exposure_seconds = stod(argv[++i]);
+        } else if (strcmp(argv[i], "--gain") == 0 && i + 1 < argc) {
+            gain_value = stoi(argv[++i]);
+        }
+    }
+
     cout << "Starting ZWO ASICamera exposure..." << endl;
 
     int connected_cameras = ASIGetNumOfConnectedCameras();
@@ -39,10 +54,14 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    double exposure_seconds = (argc > 1) ? stod(argv[1]) : 20.0;
-    long exposure_time = static_cast<long>(exposure_seconds * 1e6);
-    if (ASISetControlValue(camera_info.CameraID, ASI_EXPOSURE, exposure_time, ASI_FALSE) != ASI_SUCCESS) {
+    long exposure_time_us = static_cast<long>(exposure_seconds * 1e6);
+    if (ASISetControlValue(camera_info.CameraID, ASI_EXPOSURE, exposure_time_us, ASI_FALSE) != ASI_SUCCESS) {
         cerr << "Error setting exposure time" << endl;
+        return 1;
+    }
+
+    if (ASISetControlValue(camera_info.CameraID, ASI_GAIN, gain_value, ASI_FALSE) != ASI_SUCCESS) {
+        cerr << "Error setting gain" << endl;
         return 1;
     }
 
@@ -90,7 +109,11 @@ int main(int argc, char *argv[]) {
     output_file.write(reinterpret_cast<char*>(asi_image.data()), asi_image.size());
     output_file.close();
 
-    cout << "Exposure data saved to " << filename.str() << endl;
+    cout << "✓ Exposure saved: " << filename.str() << endl;
+    cout << fixed << setprecision(3);
+    cout << "✓ Exposure time: " << exposure_seconds << " s" << endl;
+    cout << "✓ Gain: " << gain_value << endl;
+
     ASICloseCamera(camera_info.CameraID);
     return 0;
 }
