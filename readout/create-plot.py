@@ -10,8 +10,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # === CONFIG ===
-counts_per_wheel_rev_guess = 2410  # Adjust as needed
-timezone_offset_hours = 4          # Local to UTC
+counts_per_wheel_rev_guess = 2400
+timezone_offset_hours = 4
+plot_types = ["one_pixel", "all_pixel_sum", "all_pixel_avg", "ROI_sum", "ROI_average", "ROI_median"]
+
 
 def load_encoder_data(pkl_path):
     with open(pkl_path, "rb") as f:
@@ -24,6 +26,7 @@ def load_encoder_data(pkl_path):
     ])
     encoder_ts_float = np.array([et.timestamp() for et in encoder_times])
     return encoder_ts_float, encoder_counts
+
 
 def find_closest_encoder_angle(fits_ts, encoder_ts_array, encoder_counts):
     if fits_ts < encoder_ts_array[0] or fits_ts > encoder_ts_array[-1]:
@@ -38,6 +41,21 @@ def find_closest_encoder_angle(fits_ts, encoder_ts_array, encoder_counts):
     closest_idx = idx - 1 if abs(fits_ts - before) < abs(fits_ts - after) else idx
     return encoder_counts[closest_idx]
 
+
+def save_plot(x, y, xlabel, ylabel, title, log_y, outpath):
+    plt.figure(figsize=(8, 5))
+    plt.plot(x, y, 'o', markersize=4)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    if log_y:
+        plt.yscale("log")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(outpath)
+    plt.close()
+
+
 def main():
     if len(sys.argv) != 3:
         print(f"Usage: {sys.argv[0]} <fits_exposure_dir> <encoder_data.pkl>")
@@ -46,6 +64,10 @@ def main():
     fits_dir = sys.argv[1]
     encoder_pkl = sys.argv[2]
     fits_path = os.path.join(fits_dir, "processed", "fits")
+    plot_base_dir = os.path.join(fits_dir, "plots")
+    os.makedirs(plot_base_dir, exist_ok=True)
+    for folder in plot_types:
+        os.makedirs(os.path.join(plot_base_dir, folder), exist_ok=True)
 
     fits_files = sorted(glob(os.path.join(fits_path, "*.fits")))
     if not fits_files:
@@ -53,94 +75,50 @@ def main():
         sys.exit(1)
 
     encoder_ts_array, encoder_counts = load_encoder_data(encoder_pkl)
-
-    # === Find brightest pixel in first frame ===
     first_data = fits.getdata(fits_files[0])
     y_max, x_max = np.unravel_index(np.argmax(first_data), first_data.shape)
-    print(f"Brightest pixel in first frame: (x={x_max}, y={first_data.shape[0] - 1 - y_max})")
 
-    # === Storage ===
-    pixel_sums = []
-    pixel_vals = []
-    encoder_vals = []
+    encoders = []
+    angles = []
+    vals = {k: [] for k in plot_types}
 
-    for i, ffile in enumerate(fits_files):
+    for ffile in fits_files:
         hdr = fits.getheader(ffile)
         fits_time_str = hdr.get("DATE-OBS")
         if not fits_time_str:
             continue
-
-        fits_dt = datetime.fromisoformat(fits_time_str.replace("Z", "+00:00"))
-        fits_dt += timedelta(hours=timezone_offset_hours)
-        fits_dt = fits_dt.replace(tzinfo=timezone.utc)
-        fits_ts = fits_dt.timestamp()
+        fits_dt = datetime.fromisoformat(fits_time_str.replace("Z", "+00:00")) + timedelta(hours=timezone_offset_hours)
+        fits_ts = fits_dt.replace(tzinfo=timezone.utc).timestamp()
 
         encoder_val = find_closest_encoder_angle(fits_ts, encoder_ts_array, encoder_counts)
         if encoder_val is None:
-            print(f"Skipping {ffile}: no encoder match")
             continue
 
         data = fits.getdata(ffile)
-        pixel_sum = np.sum(data)
-        pixel_val = data[y_max, x_max]
+        roi = data[y_max-1:y_max+2, x_max-1:x_max+2]  # 3x3 ROI
 
-        pixel_sums.append(pixel_sum)
-        pixel_vals.append(pixel_val)
-        encoder_vals.append(encoder_val)
+        encoders.append(encoder_val)
+        rel = encoder_val - encoder_counts[0]
+        frac = (rel / counts_per_wheel_rev_guess) % 1
+        angles.append(frac * 2 * np.pi)
 
-    # === Convert to numpy arrays ===
-    pixel_sums = np.array(pixel_sums)
-    pixel_vals = np.array(pixel_vals)
-    encoder_vals = np.array(encoder_vals)
+        vals["one_pixel"].append(data[y_max, x_max])
+        vals["all_pixel_sum"].append(np.sum(data))
+        vals["all_pixel_avg"].append(np.mean(data))
+        vals["ROI_sum"].append(np.sum(roi))
+        vals["ROI_average"].append(np.mean(roi))
+        vals["ROI_median"].append(np.median(roi))
 
-    # === Compute folded angles ===
-    rel_counts = encoder_vals - encoder_vals[0]
-    wheel_frac = (rel_counts / counts_per_wheel_rev_guess) % 1
-    wheel_angles = wheel_frac * 2 * np.pi
+    encoders = np.array(encoders)
+    angles = np.array(angles)
 
-    # === Plot 1: Pixel sum vs encoder ===
-    plt.figure(figsize=(8, 5))
-    plt.plot(encoder_vals, pixel_sums, 'o', label="Pixel Sum vs Encoder")
-    plt.xlabel("Encoder Count")
-    plt.ylabel("Pixel Sum")
-    plt.yscale("log")
-    plt.title("Pixel Sum vs Encoder Count")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(os.path.join(fits_dir, "plot_1_pixel_sum_vs_encoder.png"))
+    for k in plot_types:
+        y = np.array(vals[k])
+        save_plot(encoders, y, "Encoder Count", k.replace("_", " ").title(), f"{k.replace('_', ' ').title()} vs Encoder", log_y=("sum" in k), outpath=os.path.join(plot_base_dir, k, f"{k}_vs_encoder.png"))
+        save_plot(angles, y, "Plate Angle (rad)", k.replace("_", " ").title(), f"{k.replace('_', ' ').title()} vs Plate Angle", log_y=("sum" in k), outpath=os.path.join(plot_base_dir, k, f"{k}_vs_angle.png"))
 
-    # === Plot 2: Pixel sum vs plate angle (folded, log scale) ===
-    plt.figure(figsize=(8, 5))
-    plt.scatter(wheel_angles, pixel_sums, s=15, alpha=0.7)
-    plt.xlabel("Plate Angle (radians)")
-    plt.ylabel("Pixel Sum (log scale)")
-    plt.yscale("log")
-    plt.title("Pixel Sum vs Plate Angle (Folded, Log Scale)")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(os.path.join(fits_dir, "plot_2_pixel_sum_vs_angle_log.png"))
+    print("All plots saved to:", plot_base_dir)
 
-    # === Plot 3: Brightest pixel vs encoder ===
-    plt.figure(figsize=(8, 5))
-    plt.plot(encoder_vals, pixel_vals, 'o', label="Brightest Pixel vs Encoder")
-    plt.xlabel("Encoder Count")
-    plt.ylabel("Pixel Value")
-    plt.title("Brightest Pixel vs Encoder Count")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(os.path.join(fits_dir, "plot_3_brightest_pixel_vs_encoder.png"))
-
-    # === Plot 4: Brightest pixel vs plate angle (folded, linear) ===
-    plt.figure(figsize=(8, 5))
-    plt.scatter(wheel_angles, pixel_vals, s=15, alpha=0.7)
-    plt.xlabel("Plate Angle (radians)")
-    plt.ylabel("Brightest Pixel Value")
-    plt.title("Brightest Pixel vs Plate Angle (Folded)")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(os.path.join(fits_dir, "plot_4_brightest_pixel_vs_angle_linear.png"))
-
-    print("Saved 4 plots to", fits_dir)
 
 if __name__ == "__main__":
     main()
