@@ -12,7 +12,7 @@ CAPTURE_BIN="/home/declan/RPI/zwo/capture-exposure.out"
 
 # Exposure parameters
 EXPOSURE_TIME=0.001  # in seconds (1 ms)
-GAIN=200             # gain value
+GAIN=50             # gain value
 
 # Interval between exposures in seconds
 INTERVAL=1.5
