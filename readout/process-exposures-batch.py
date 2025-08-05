@@ -26,7 +26,7 @@ def extract_timestamp_from_filename(filename):
         print(f"Warning: failed to parse timestamp from {filename}: {e}")
         return "UNKNOWN"
 
-def process_bin_file(bin_path, output_dirs, skip_gray, skip_color, skip_fits):
+def process_bin_file(bin_path, output_dirs, skip_green, skip_color, skip_fits):
     width, height = 3096, 2080
     base_name = os.path.splitext(os.path.basename(bin_path))[0]
 
@@ -39,6 +39,7 @@ def process_bin_file(bin_path, output_dirs, skip_gray, skip_color, skip_fits):
     green2 = image_data[1::2, ::2]
     blue = image_data[1::2, 1::2]
     color = np.stack([red, green1, blue], axis=-1)
+    green = green1.astype(np.uint8)
 
     timestamp = extract_timestamp_from_filename(bin_path)
 
@@ -64,16 +65,16 @@ def process_bin_file(bin_path, output_dirs, skip_gray, skip_color, skip_fits):
         plt.imsave(color_path, color)
         print(f"\u2713 Color preview: {color_path}")
 
-    if not skip_gray:
-        gray_path = os.path.join(output_dirs["gray"], base_name + "_gray.png")
-        plt.imsave(gray_path, image_data, cmap="gray")
-        print(f"\u2713 Grayscale preview: {gray_path}")
+    if not skip_green:
+        green_path = os.path.join(output_dirs["green"], base_name + "_green.png")
+        plt.imsave(green_path, green, cmap="gray")
+        print(f"\u2713 Green preview: {green_path}")
 
 def main():
     parser = argparse.ArgumentParser(description="Batch process .bin files to FITS and previews.")
     parser.add_argument("base_dir", help="Path to exposure directory (e.g., exposures-YYYYMMDD-HHMMSS)")
     parser.add_argument("--no-color", action="store_true", help="Skip color preview generation")
-    parser.add_argument("--no-gray", action="store_true", help="Skip grayscale preview generation")
+    parser.add_argument("--no-green", action="store_true", help="Skip green preview generation")
     parser.add_argument("--no-fits", action="store_true", help="Skip FITS file generation")
     args = parser.parse_args()
 
@@ -81,24 +82,23 @@ def main():
     proc_dir = os.path.join(args.base_dir, "processed")
     fits_dir = os.path.join(proc_dir, "fits")
     color_dir = os.path.join(proc_dir, "color")
-    gray_dir = os.path.join(proc_dir, "grayscale")
+    green_dir = os.path.join(proc_dir, "green")
 
     if not os.path.isdir(raw_dir):
         print(f"Error: {raw_dir} does not exist.")
         sys.exit(1)
 
-    # Create required output folders
     if not args.no_fits:
         os.makedirs(fits_dir, exist_ok=True)
     if not args.no_color:
         os.makedirs(color_dir, exist_ok=True)
-    if not args.no_gray:
-        os.makedirs(gray_dir, exist_ok=True)
+    if not args.no_green:
+        os.makedirs(green_dir, exist_ok=True)
 
     output_dirs = {
         "fits": fits_dir,
         "color": color_dir,
-        "gray": gray_dir,
+        "green": green_dir,
     }
 
     bin_files = sorted(f for f in os.listdir(raw_dir) if f.endswith(".bin"))
@@ -109,7 +109,7 @@ def main():
     for i, fname in enumerate(bin_files, 1):
         full_path = os.path.join(raw_dir, fname)
         print(f"[{i}/{len(bin_files)}] Processing: {fname}")
-        process_bin_file(full_path, output_dirs, args.no_gray, args.no_color, args.no_fits)
+        process_bin_file(full_path, output_dirs, args.no_green, args.no_color, args.no_fits)
 
     print("\n\u2705 Batch processing complete.")
 
