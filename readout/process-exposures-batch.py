@@ -30,45 +30,53 @@ def process_bin_file(bin_path, output_dirs, skip_green, skip_color, skip_fits):
     width, height = 3096, 2080
     base_name = os.path.splitext(os.path.basename(bin_path))[0]
 
+    # === Load raw data ===
     with open(bin_path, "rb") as f:
         pixel_data = np.frombuffer(f.read(), dtype=np.uint16).reshape((height, width))
-    image_data = (pixel_data / pixel_data.max() * 255).astype(np.uint8)
 
-    red = image_data[::2, ::2]
-    green1 = image_data[::2, 1::2]
-    green2 = image_data[1::2, ::2]
-    blue = image_data[1::2, 1::2]
-    color = np.stack([red, green1, blue], axis=-1)
-    green = green1.astype(np.uint8)
+    # === Extract raw channels (for FITS) ===
+    red    = pixel_data[::2, ::2]
+    green1 = pixel_data[::2, 1::2]
+    green2 = pixel_data[1::2, ::2]
+    blue   = pixel_data[1::2, 1::2]
+    color  = np.stack([red, green1, blue], axis=-1)
+
+    # === Scaled 8-bit versions (for PNG previews only) ===
+    preview_data = (pixel_data / pixel_data.max() * 255).astype(np.uint8)
+    red_preview    = preview_data[::2, ::2]
+    green1_preview = preview_data[::2, 1::2]
+    blue_preview   = preview_data[1::2, 1::2]
+    color_preview  = np.stack([red_preview, green1_preview, blue_preview], axis=-1)
+    green_preview  = green1_preview.astype(np.uint8)
 
     timestamp = extract_timestamp_from_filename(bin_path)
 
-    # === Create FITS ===
+    # === Create FITS with raw data ===
     if not skip_fits:
         hdul = fits.HDUList()
-        hdu_gray = fits.PrimaryHDU(image_data)
+        hdu_gray = fits.PrimaryHDU(pixel_data)
         hdu_gray.header['DATE-OBS'] = timestamp
         hdul.append(hdu_gray)
-        hdul.append(fits.ImageHDU(red, name='RED'))
+        hdul.append(fits.ImageHDU(red,    name='RED'))
         hdul.append(fits.ImageHDU(green1, name='GREEN1'))
         hdul.append(fits.ImageHDU(green2, name='GREEN2'))
-        hdul.append(fits.ImageHDU(blue, name='BLUE'))
-        hdul.append(fits.ImageHDU(color, name='COLOR_COMPOSITE'))
+        hdul.append(fits.ImageHDU(blue,   name='BLUE'))
+        hdul.append(fits.ImageHDU(color,  name='COLOR_COMPOSITE'))
 
         fits_path = os.path.join(output_dirs["fits"], base_name + ".fits")
         hdul.writeto(fits_path, overwrite=True)
-        print(f"\u2713 FITS saved: {fits_path}")
+        print(f"✓ FITS saved: {fits_path}")
 
-    # === Optional previews ===
+    # === Save PNG previews (scaled) ===
     if not skip_color:
         color_path = os.path.join(output_dirs["color"], base_name + "_color.png")
-        plt.imsave(color_path, color)
-        print(f"\u2713 Color preview: {color_path}")
+        plt.imsave(color_path, color_preview)
+        print(f"✓ Color preview: {color_path}")
 
     if not skip_green:
         green_path = os.path.join(output_dirs["green"], base_name + "_green.png")
-        plt.imsave(green_path, green, cmap="gray")
-        print(f"\u2713 Green preview: {green_path}")
+        plt.imsave(green_path, green_preview, cmap="gray")
+        print(f"✓ Green preview: {green_path}")
 
 def main():
     parser = argparse.ArgumentParser(description="Batch process .bin files to FITS and previews.")
@@ -111,7 +119,7 @@ def main():
         print(f"[{i}/{len(bin_files)}] Processing: {fname}")
         process_bin_file(full_path, output_dirs, args.no_green, args.no_color, args.no_fits)
 
-    print("\n\u2705 Batch processing complete.")
+    print("\n✅ Batch processing complete.")
 
 if __name__ == "__main__":
     main()

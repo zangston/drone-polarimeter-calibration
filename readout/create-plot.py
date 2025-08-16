@@ -10,9 +10,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # === CONFIG ===
-counts_per_wheel_rev_guess = 2400
+counts_per_wheel_rev_guess = 2382
 timezone_offset_hours = 4
 plot_types = ["one_pixel", "all_pixel_sum", "all_pixel_avg", "ROI_sum", "ROI_average", "ROI_median"]
+
+# Background ROI position/size (adjust as needed)
+background_yx = (50, 50)   # top-left corner for background
+roi_size = 3               # 3x3 for both ROI and background
 
 
 def load_encoder_data(pkl_path):
@@ -75,7 +79,9 @@ def main():
         sys.exit(1)
 
     encoder_ts_array, encoder_counts = load_encoder_data(encoder_pkl)
-    first_data = fits.getdata(fits_files[0])
+
+    # === Use GREEN1 channel explicitly ===
+    first_data = fits.getdata(fits_files[0], extname="GREEN1")
     y_max, x_max = np.unravel_index(np.argmax(first_data), first_data.shape)
 
     encoders = []
@@ -94,21 +100,33 @@ def main():
         if encoder_val is None:
             continue
 
-        data = fits.getdata(ffile)
-        roi = data[y_max-1:y_max+2, x_max-1:x_max+2]  # 3x3 ROI
+        # Load GREEN1 channel only
+        data = fits.getdata(ffile, extname="GREEN1")
+
+        # Signal ROI (around brightest pixel)
+        roi = data[y_max-1:y_max+2, x_max-1:x_max+2]
+
+        # Background ROI (fixed offset area)
+        by, bx = background_yx
+        background_roi = data[by:by+roi_size, bx:bx+roi_size]
+        background_mean = np.mean(background_roi)
+        background_sum = np.sum(background_roi)
 
         encoders.append(encoder_val)
         rel = encoder_val - encoder_counts[0]
         frac = (rel / counts_per_wheel_rev_guess) % 1
         angles.append(frac * 2 * np.pi)
 
+        # === Store values ===
         vals["one_pixel"].append(data[y_max, x_max])
-        vals["all_pixel_sum"].append(np.sum(data))
-        vals["all_pixel_avg"].append(np.mean(data))
-        vals["ROI_sum"].append(np.sum(roi))
-        vals["ROI_average"].append(np.mean(roi))
-        vals["ROI_median"].append(np.median(roi))
+        vals["all_pixel_sum"].append(np.sum(data))   # no background subtraction
+        vals["all_pixel_avg"].append(np.mean(data))  # no background subtraction
 
+        # ROI metrics with background subtraction
+        vals["ROI_sum"].append(np.sum(roi) - background_sum)
+        vals["ROI_average"].append(np.mean(roi) - background_mean)
+        vals["ROI_median"].append(np.median(roi) - background_mean)
+        
     encoders = np.array(encoders)
     angles = np.array(angles)
 
