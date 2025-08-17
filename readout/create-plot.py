@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 # === CONFIG ===
 counts_per_wheel_rev_guess = 2382
 timezone_offset_hours = 4
-plot_types = ["one_pixel", "all_pixel_sum", "all_pixel_avg", "ROI_sum", "ROI_average", "ROI_median"]
+plot_types = ["one_pixel", "all_pixel_sum", "all_pixel_avg",
+              "ROI_sum", "ROI_average", "ROI_median"]
 
 # Background ROI position/size (adjust as needed)
 background_yx = (50, 50)   # top-left corner for background
@@ -46,14 +47,12 @@ def find_closest_encoder_angle(fits_ts, encoder_ts_array, encoder_counts):
     return encoder_counts[closest_idx]
 
 
-def save_plot(x, y, xlabel, ylabel, title, log_y, outpath):
+def save_plot(x, y, xlabel, ylabel, title, outpath):
     plt.figure(figsize=(8, 5))
     plt.plot(x, y, 'o', markersize=4)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
-    if log_y:
-        plt.yscale("log")
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(outpath)
@@ -93,10 +92,14 @@ def main():
         fits_time_str = hdr.get("DATE-OBS")
         if not fits_time_str:
             continue
-        fits_dt = datetime.fromisoformat(fits_time_str.replace("Z", "+00:00")) + timedelta(hours=timezone_offset_hours)
+        fits_dt = datetime.fromisoformat(
+            fits_time_str.replace("Z", "+00:00")
+        ) + timedelta(hours=timezone_offset_hours)
         fits_ts = fits_dt.replace(tzinfo=timezone.utc).timestamp()
 
-        encoder_val = find_closest_encoder_angle(fits_ts, encoder_ts_array, encoder_counts)
+        encoder_val = find_closest_encoder_angle(
+            fits_ts, encoder_ts_array, encoder_counts
+        )
         if encoder_val is None:
             continue
 
@@ -126,14 +129,20 @@ def main():
         vals["ROI_sum"].append(np.sum(roi) - background_sum)
         vals["ROI_average"].append(np.mean(roi) - background_mean)
         vals["ROI_median"].append(np.median(roi) - background_mean)
-        
+
     encoders = np.array(encoders)
     angles = np.array(angles)
 
     for k in plot_types:
         y = np.array(vals[k])
-        save_plot(encoders, y, "Encoder Count", k.replace("_", " ").title(), f"{k.replace('_', ' ').title()} vs Encoder", log_y=("sum" in k), outpath=os.path.join(plot_base_dir, k, f"{k}_vs_encoder.png"))
-        save_plot(angles, y, "Plate Angle (rad)", k.replace("_", " ").title(), f"{k.replace('_', ' ').title()} vs Plate Angle", log_y=("sum" in k), outpath=os.path.join(plot_base_dir, k, f"{k}_vs_angle.png"))
+        save_plot(encoders, y, "Encoder Count",
+                  k.replace("_", " ").title(),
+                  f"{k.replace('_', ' ').title()} vs Encoder",
+                  outpath=os.path.join(plot_base_dir, k, f"{k}_vs_encoder.png"))
+        save_plot(angles, y, "Plate Angle (rad)",
+                  k.replace("_", " ").title(),
+                  f"{k.replace('_', ' ').title()} vs Plate Angle",
+                  outpath=os.path.join(plot_base_dir, k, f"{k}_vs_angle.png"))
 
     print("All plots saved to:", plot_base_dir)
 
