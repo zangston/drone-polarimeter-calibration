@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # === CONFIG ===
-counts_per_wheel_rev_guess = 2382
+counts_per_wheel_rev_guess = 2394
 timezone_offset_hours = 4
 plot_types = ["one_pixel", "all_pixel_sum", "all_pixel_avg",
               "ROI_sum", "ROI_average", "ROI_median"]
@@ -47,12 +47,13 @@ def find_closest_encoder_angle(fits_ts, encoder_ts_array, encoder_counts):
     return encoder_counts[closest_idx]
 
 
-def save_plot(x, y, xlabel, ylabel, title, outpath):
+def save_plot(x, y, c, xlabel, ylabel, title, outpath):
     plt.figure(figsize=(8, 5))
-    plt.plot(x, y, 'o', markersize=4)
+    sc = plt.scatter(x, y, c=c, cmap="viridis", s=15, marker='o')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
+    plt.colorbar(sc, label="Rotation index")
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(outpath)
@@ -85,6 +86,7 @@ def main():
 
     encoders = []
     angles = []
+    rotations = []
     vals = {k: [] for k in plot_types}
 
     for ffile in fits_files:
@@ -120,6 +122,10 @@ def main():
         frac = (rel / counts_per_wheel_rev_guess) % 1
         angles.append(frac * 2 * np.pi)
 
+        # Rotation index (integer turn count of the wheel)
+        rot_index = int(rel // counts_per_wheel_rev_guess)
+        rotations.append(rot_index)
+
         # === Store values ===
         vals["one_pixel"].append(data[y_max, x_max])
         vals["all_pixel_sum"].append(np.sum(data))   # no background subtraction
@@ -132,15 +138,16 @@ def main():
 
     encoders = np.array(encoders)
     angles = np.array(angles)
+    rotations = np.array(rotations)
 
     for k in plot_types:
         y = np.array(vals[k])
-        save_plot(encoders, y, "Encoder Count",
-                  k.replace("_", " ").title(),
+        save_plot(encoders, y, rotations,
+                  "Encoder Count", k.replace("_", " ").title(),
                   f"{k.replace('_', ' ').title()} vs Encoder",
                   outpath=os.path.join(plot_base_dir, k, f"{k}_vs_encoder.png"))
-        save_plot(angles, y, "Plate Angle (rad)",
-                  k.replace("_", " ").title(),
+        save_plot(angles, y, rotations,
+                  "Plate Angle (rad)", k.replace("_", " ").title(),
                   f"{k.replace('_', ' ').title()} vs Plate Angle",
                   outpath=os.path.join(plot_base_dir, k, f"{k}_vs_angle.png"))
 
