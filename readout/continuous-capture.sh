@@ -7,10 +7,14 @@ RAW_DIR="$BASE_DIR/raw"
 PROCESSED_DIR="$BASE_DIR/processed"
 mkdir -p "$RAW_DIR" "$PROCESSED_DIR"
 
-# Full path to the exposure capture binary
+# Full path to the refactored capture binary
 CAPTURE_BIN="/home/declan/RPI/zwo/capture-exposure.out"
 
-# Interval between exposures in seconds (1.5 seconds)
+# Exposure parameters
+EXPOSURE_TIME=0.001  # in seconds (1 ms)
+GAIN=50             # gain value
+
+# Interval between exposures in seconds
 INTERVAL=1.5
 
 # Trap keyboard interrupt (Ctrl+C) and exit cleanly
@@ -20,6 +24,6 @@ echo "Saving exposures to $RAW_DIR. Press Ctrl+C to stop."
 
 cd "$RAW_DIR"
 while true; do
-    "$CAPTURE_BIN" 0.001
-    sleep $INTERVAL
+    "$CAPTURE_BIN" --exposure-time "$EXPOSURE_TIME" --gain "$GAIN"
+    sleep "$INTERVAL"
 done
