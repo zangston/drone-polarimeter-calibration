@@ -1,9 +1,0 @@
-- camera/: pretty sure zwo camera doesn't need this
-- motor/
-    - count_manually/
-    - quad_enc/
-        - fails-qsb
-        - nerd_file*
-    - nerd_file*
-- readout/
-    
