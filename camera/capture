@@ -1,8 +1,0 @@
-import time
-import PyIndi
-
-indi = PyIndi.IndiClient()
-
-indi.connectServer("localhost", 7624)
-
-time.sleep(1)
