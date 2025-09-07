@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # === CONFIG ===
-counts_per_wheel_rev_guess = 2394
+counts_per_wheel_rev_guess = 2400
 timezone_offset_hours = 4
 plot_types = ["one_pixel", "all_pixel_sum", "all_pixel_avg",
               "ROI_sum", "ROI_average", "ROI_median"]
